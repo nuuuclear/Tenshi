@@ -1,0 +1,363 @@
+#include <algorithm>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <limits>
+
+#include <lz4.h>
+
+namespace fs = std::filesystem;
+
+// lz4 file construction
+constexpr uint32_t PAK_MAGIC = 0x4B415054;
+constexpr uint32_t PAK_VERSION = 1;
+
+enum class Compression : uint32_t {
+    None = 0,
+    LZ4 = 1
+};
+
+#pragma pack(push, 1)
+
+struct PakHeader {
+    uint32_t magic;
+    uint32_t version;
+
+    uint64_t fileCount;
+    uint64_t tableOffset;
+};
+
+struct PakEntryHeader {
+    uint32_t pathLength;
+
+    uint64_t offset;
+    uint64_t compressedSize;
+    uint64_t uncompressedSize;
+
+    uint32_t compression;
+    uint32_t checksum;
+};
+
+#pragma pack(pop)
+
+struct FileData {
+    std::string path;
+
+    std::vector<uint8_t> data;
+    std::vector<uint8_t> compressed;
+
+    Compression compression;
+
+    uint32_t checksum;
+
+    uint64_t offset = 0;
+};
+
+uint32_t crc32(const uint8_t* data, size_t size) {
+    uint32_t crc = 0xFFFFFFFFu;
+
+    for (size_t i = 0; i < size; ++i) {
+        crc ^= data[i];
+
+        for (int bit = 0; bit < 8; ++bit) {
+            uint32_t mask = -(crc & 1u);
+            crc = (crc >> 1) ^(0xEDB88320u & mask);
+        }
+    }
+
+    return ~crc;
+}
+
+bool readFile(const fs::path& path, std::vector<uint8_t>& output) {
+    std::ifstream file( path, std::ios::binary | std::ios::ate);
+    if (!file) return false;
+    
+    std::streamsize size = file.tellg();
+    if (size < 0) return false;
+
+    file.seekg(0, std::ios::beg);
+
+    output.resize(static_cast<size_t>(size));
+
+    if (!output.empty()) {
+        file.read(
+            reinterpret_cast<char*>(output.data()),
+            size
+        );
+
+        if (!file) return false;
+    }
+
+    return true;
+}
+
+std::string makeVirtualPath(const fs::path& root, const fs::path& file) {
+    fs::path relative = fs::relative(file, root);
+
+    return relative.generic_string();
+}
+
+bool compressFile(FileData& file) {
+    if (file.data.empty()) {
+        file.compression = Compression::None;
+
+        return true;
+    }
+
+    if (file.data.size() >
+        static_cast<size_t>(std::numeric_limits<int>::max())) {
+        file.compression = Compression::None;
+
+        return true;
+    }
+
+    int sourceSize = static_cast<int>(file.data.size());
+    int maximumSize = LZ4_compressBound(sourceSize);
+
+    file.compressed.resize(static_cast<size_t>(maximumSize));
+
+    int compressedSize = LZ4_compress_default(
+        reinterpret_cast<const char*>(file.data.data()),
+        reinterpret_cast<char*>(file.compressed.data()),
+        sourceSize,
+        maximumSize
+    );
+
+    if (compressedSize <= 0) {
+        file.compressed.clear();
+        file.compression = Compression::None;
+
+        return true;
+    }
+
+    if (compressedSize >= sourceSize) {
+        file.compressed.clear();
+        file.compression = Compression::None;
+
+        return true;
+    }
+
+    file.compressed.resize(static_cast<size_t>(compressedSize));
+    file.compression = Compression::LZ4;
+
+    return true;
+}
+
+int main(int argc, char** argv) {
+    if (argc != 3) {
+        std::cout
+            << "Usage:\n"
+            << "  tenshi_packer <input directory> <output pak>\n";
+
+        return 1;
+    }
+
+    fs::path inputDirectory = fs::absolute(argv[1]).lexically_normal();
+    fs::path outputFile = fs::absolute(argv[2]).lexically_normal();
+
+    if (!fs::exists(inputDirectory) ||
+        !fs::is_directory(inputDirectory)) {
+        std::cerr
+            << "Input directory does not exist: "
+            << inputDirectory
+            << '\n';
+
+        return 1;
+    }
+
+    std::vector<fs::path> files;
+
+    for (const auto& entry :
+        fs::recursive_directory_iterator(inputDirectory)) {
+
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+
+        files.push_back(entry.path());
+    }
+
+    std::sort(files.begin(), files.end());
+
+    std::vector<FileData> entries;
+
+    for (const auto& path : files) {
+        FileData file;
+
+        file.path = makeVirtualPath(
+            inputDirectory,
+            path
+        );
+
+        std::cout
+            << "Packing "
+            << file.path
+            << '\n';
+
+        if (!readFile(path, file.data)) {
+            std::cerr
+                << "Failed to read: "
+                << path
+                << '\n';
+
+            return 1;
+        }
+
+        file.checksum = crc32(file.data.data(), file.data.size());
+
+        if (!compressFile(file)) {
+            std::cerr
+                << "Failed to compress: "
+                << file.path
+                << '\n';
+
+            return 1;
+        }
+
+        entries.push_back(std::move(file));
+    }
+
+    std::ofstream output(outputFile, std::ios::binary | std::ios::trunc);
+
+    if (!output) {
+        std::cerr
+            << "Failed to create output: "
+            << outputFile
+            << '\n';
+
+        return 1;
+    }
+
+    PakHeader header{};
+
+    header.magic = PAK_MAGIC;
+    header.version = PAK_VERSION;
+    header.fileCount = entries.size();
+    header.tableOffset = 0;
+
+    output.write(reinterpret_cast<const char*>(&header), sizeof(header));
+    if (!output) {
+        std::cerr << "Failed writing PAK header\n";
+
+        return 1;
+    }
+
+    for (auto& entry : entries) {
+        entry.offset = static_cast<uint64_t>(output.tellp());
+
+        const std::vector<uint8_t>& data 
+        =   entry.compression == Compression::LZ4
+            ?   entry.compressed
+            :   entry.data;
+
+        if (!data.empty()) {
+            output.write(
+                reinterpret_cast<const char*>(data.data()),
+                static_cast<std::streamsize>(data.size())
+            );
+        }
+
+        if (!output) {
+            std::cerr
+                << "Failed writing data: "
+                << entry.path
+                << '\n';
+
+            return 1;
+        }
+    }
+
+    uint64_t tableOffset = static_cast<uint64_t>(output.tellp());
+
+    for (const auto& entry : entries) {
+        PakEntryHeader entryHeader{};
+
+        entryHeader.pathLength = static_cast<uint32_t>(entry.path.size());
+
+        entryHeader.offset =entry.offset;
+
+        entryHeader.compressedSize 
+        = entry.compression == Compression::LZ4
+            ?   entry.compressed.size()
+            :   entry.data.size();
+
+        entryHeader.uncompressedSize = entry.data.size();
+        entryHeader.compression = static_cast<uint32_t>(entry.compression);
+        entryHeader.checksum = entry.checksum;
+
+        output.write(
+            reinterpret_cast<const char*>(&entryHeader),
+            sizeof(entryHeader)
+        );
+
+        output.write(
+            entry.path.data(),
+            static_cast<std::streamsize>(entry.path.size())
+        );
+
+        if (!output) {
+            std::cerr
+                << "Failed writing table entry: "
+                << entry.path
+                << '\n';
+
+            return 1;
+        }
+    }
+
+    header.tableOffset = tableOffset;
+
+    output.seekp(0, std::ios::beg);
+    output.write(
+        reinterpret_cast<const char*>(&header),
+        sizeof(header)
+    );
+    output.close();
+
+    if (!output) {
+        std::cerr << "Failed finalizing archive\n";
+
+        return 1;
+    }
+
+    uint64_t originalSize = 0;
+    uint64_t archiveSize = fs::file_size(outputFile);
+
+    for (const auto& entry : entries) {
+        originalSize += entry.data.size();
+    }
+
+    std::cout
+        << '\n'
+        << "Packed "
+        << entries.size()
+        << " files\n"
+        << "Original size: "
+        << originalSize
+        << " bytes\n"
+        << "Archive size: "
+        << archiveSize
+        << " bytes\n";
+
+    if (originalSize > 0) {
+        double percentage 
+        =   100.0 
+        *   static_cast<double>(archiveSize) 
+        /   static_cast<double>(originalSize);
+
+        std::cout
+            << "archive size: "
+            << percentage
+            << "% of original\n";
+    }
+
+    std::cout
+        << "output: "
+        << outputFile
+        << '\n';
+
+    return 0;
+}

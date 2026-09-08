@@ -20,6 +20,11 @@ add_library(miniaudio STATIC
 )
 target_include_directories(miniaudio PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/miniaudio")
 
+add_subdirectory(
+    "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/lz4/build/cmake"
+    lz4
+)
+
 #########################
 #     tenshi engine     #
 #########################
@@ -85,6 +90,10 @@ target_sources(tenshi PRIVATE
     "${TENSHI_SOURCE_DIR}/Subroutine.h"
     "${TENSHI_SOURCE_DIR}/FileSystem.h"
     "${TENSHI_SOURCE_DIR}/FileSystem.cpp"
+    "${TENSHI_SOURCE_DIR}/PakArchive.h"
+    "${TENSHI_SOURCE_DIR}/PakArchive.cpp"
+    "${TENSHI_SOURCE_DIR}/PakFile.h"
+    "${TENSHI_SOURCE_DIR}/PakFile.cpp"
 )
 
 target_link_libraries(tenshi PUBLIC
@@ -92,6 +101,7 @@ target_link_libraries(tenshi PUBLIC
     SDL3_image::SDL3_image 
     SDL3_ttf::SDL3_ttf
     miniaudio
+    lz4
 )
 
 target_include_directories(tenshi
@@ -100,6 +110,33 @@ target_include_directories(tenshi
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+# packer
+
+add_executable(packer_tool
+    tools/pak/main.cpp
+)
+
+target_link_libraries(packer_tool
+    PRIVATE 
+        lz4
+)
+
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/resource0.tpk
+    COMMAND
+        packer_tool
+        ${CMAKE_SOURCE_DIR}/resources
+        ${CMAKE_BINARY_DIR}/resource0.tpk
+    DEPENDS packer_tool
+    COMMENT "Packing game resources"
+)
+
+add_custom_target(
+    pack_resources
+    ALL
+    DEPENDS ${CMAKE_BINARY_DIR}/resource0.tpk
 )
 
 # install

@@ -1,27 +1,57 @@
 #pragma once
 
-#include <filesystem>
+#include <cstdint>
+#include <memory>
 #include <string>
-#include <unordered_map>
+#include <string_view>
+#include <vector>
 
 namespace Tenshi {
 
+class File {
+public:
+    virtual ~File() = default;
+
+    virtual size_t read(void* buffer, size_t size) = 0;
+    virtual bool seek(int64_t offset, int origin) = 0;
+    virtual int64_t tell() const = 0;
+    virtual int64_t size() const = 0;
+
+    bool readAll(std::vector<uint8_t>& output);
+};
+
 class FileSystem {
 public:
-    using Path = std::filesystem::path;
+    FileSystem();
+    ~FileSystem();
 
-    void setRoot(const Path& root);
-    void set(const std::string& name,const Path& path);
+    void setRoot(const std::string& path);
 
-    const Path& get(const std::string& name) const;
+    bool mountDirectory(
+        const std::string& virtualPath,
+        const std::string& directory
+    );
 
-    bool has(const std::string& name) const;
+    bool mountPak(
+        const std::string& virtualPath,
+        const std::string& pakPath
+    );
 
-    Path resolve(const std::string& name,const Path& relativePath = {}) const;
+    bool exists(const std::string& path) const;
+
+    std::unique_ptr<File> open(const std::string& path) const;
+    std::vector<uint8_t> readAll(const std::string& path) const;
+    std::string resolve(const std::string& path) const;
 
 private:
-    Path root;
-    std::unordered_map<std::string, Path> paths;
+    struct Mount;
+
+    std::string root;
+
+    std::vector<std::unique_ptr<Mount>> mounts;
+
+    std::string normalizePath(const std::string& path) const;
+    bool isWithinRoot(const std::string& path) const;
 };
 
 } // namespace Tenshi

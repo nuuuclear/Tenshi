@@ -60,11 +60,13 @@ bool Game::init(GameConfig conf) {
     }
 
     std::filesystem::path root(basePath);
-    filesys.setRoot(root);
+    filesys.setRoot(root.string());
 
-    filesys.set("resources",
-        root / "resources"
-    );
+    #ifdef TENGHI_PACKED
+        filesys.mountPak("", "game.pak");
+    #else
+        filesys.mountDirectory("", "resources");
+    #endif
 
     #ifdef __EMSCRIPTEN__
             renderer = SDL_CreateRenderer(window, NULL);
