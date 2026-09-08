@@ -73,20 +73,20 @@ bool Game::init(GameConfig conf) {
     std::filesystem::path root(basePath);
     filesys.setRoot(root.string());
 
-    #ifdef TENSHI_PACKED
-        filesys.mountPak("", "resource0.tpk");
-    #else
-        filesys.mountDirectory("", "resources");
-    #endif
+#ifdef TENSHI_PACKED
+    filesys.mountPak("", "resource0.tpk");
+#else
+    filesys.mountDirectory("", "resources");
+#endif
 
-    #ifdef __EMSCRIPTEN__
-            renderer = SDL_CreateRenderer(window, NULL);
-    #else
-            // renderer = SDL_CreateGPURenderer(NULL, window);
+#ifdef __EMSCRIPTEN__
+    renderer = SDL_CreateRenderer(window, NULL);
+#else
+    // renderer = SDL_CreateGPURenderer(NULL, window);
 
-            // FIX THIS: GPURenderer is disabled when resizing/moving a window, so drawing to it will cause a crash.
-            renderer = SDL_CreateRenderer(window, NULL);
-    #endif
+    // FIX THIS: GPURenderer is disabled when resizing/moving a window, so drawing to it will cause a crash.
+    renderer = SDL_CreateRenderer(window, NULL);
+#endif
 
     SDL_SetRenderVSync(renderer, 1);
 
