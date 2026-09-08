@@ -1,8 +1,9 @@
-#include "Camera.h"
+#include "Tenshi/Camera.h"
+
 #include <cmath>
 #include <algorithm>
 
-#include "Actor.h"
+#include "Tenshi/Actor.h"
 
 static double lerp(double a, double b, double t) {
     return a + (b - a) * t;

@@ -1,4 +1,4 @@
-#include "Entity.h"
+#include "Tenshi/Entity.h"
 
 namespace Tenshi {
 

@@ -1,4 +1,4 @@
-#include "SpriteBatch.h"
+#include "Tenshi/SpriteBatch.h"
 
 namespace Tenshi {
 

@@ -1,4 +1,4 @@
-#include "Sound.h"
+#include "Tenshi/Sound.h"
 
 namespace Tenshi {
 

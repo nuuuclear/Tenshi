@@ -1,10 +1,10 @@
-#include "Player.h"
+#include "Tenshi/Player.h"
 
 #include <SDL3_image/SDL_image.h>
 
 #include <string>
 
-#include "Actor.h"
+#include "Tenshi/Actor.h"
 
 namespace Tenshi {
 

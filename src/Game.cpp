@@ -1,4 +1,4 @@
-#include "Game.h"
+#include "Tenshi/Game.h"
 
 #include <utility>
 
@@ -141,9 +141,9 @@ void Game::step() {
 
     // emscripten frame limiting
 #ifdef __EMSCRIPTEN__
-        if (deltaTime < targetFrameTime) {
-            SDL_Delay((Uint32)((targetFrameTime - deltaTime) * 1000.0));
-        }
+    if (deltaTime < targetFrameTime) {
+        SDL_Delay((Uint32)((targetFrameTime - deltaTime) * 1000.0));
+    }
 #endif
 
     SDL_Event event;

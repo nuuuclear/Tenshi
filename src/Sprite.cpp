@@ -1,6 +1,6 @@
-#include "Sprite.h"
+#include "Tenshi/Sprite.h"
 
-#include "Camera.h"
+#include "Tenshi/Camera.h"
 
 namespace Tenshi {
 

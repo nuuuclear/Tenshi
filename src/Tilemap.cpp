@@ -1,10 +1,10 @@
-#include "Tilemap.h"
+#include "Tenshi/Tilemap.h"
 
-#include "Game.h"
-#include "Tileset.h"
-#include "Camera.h"
-#include "SpriteBatch.h"
-#include "Sprite.h"
+#include "Tenshi/Game.h"
+#include "Tenshi/Tileset.h"
+#include "Tenshi/Camera.h"
+#include "Tenshi/SpriteBatch.h"
+#include "Tenshi/Sprite.h"
 
 namespace Tenshi {
 

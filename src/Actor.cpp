@@ -1,6 +1,6 @@
-#include "Actor.h"
+#include "Tenshi/Actor.h"
 
-#include "Sprite.h"
+#include "Tenshi/Sprite.h"
 
 namespace Tenshi {
 

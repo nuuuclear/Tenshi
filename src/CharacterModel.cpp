@@ -1,4 +1,4 @@
-#include "CharacterModel.h"
+#include "Tenshi/CharacterModel.h"
 
 namespace Tenshi {
 

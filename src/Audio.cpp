@@ -1,9 +1,9 @@
 #include <stdio.h>
 
-#include "Audio.h"
-#include "Log.h"
+#include "Tenshi/Audio.h"
+#include "Tenshi/Log.h"
 
-#include "Sound.h"
+#include "Tenshi/Sound.h"
 
 namespace Tenshi {
 

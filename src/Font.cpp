@@ -1,5 +1,5 @@
-#include "Font.h"
-#include "Log.h"
+#include "Tenshi/Font.h"
+#include "Tenshi/Log.h"
 
 namespace Tenshi {
 

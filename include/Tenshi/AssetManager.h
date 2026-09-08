@@ -2,7 +2,7 @@
 
 #include "AssetRegistry.h"
 
-#include "Sprite.h"
+#include "Tenshi/Sprite.h"
 #include "Font.h"
 
 namespace Tenshi {

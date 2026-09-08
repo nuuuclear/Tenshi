@@ -1,10 +1,10 @@
-#include "ResourceLoading.h"
+#include "Tenshi/ResourceLoading.h"
 
 #include <memory>
 
-#include "Log.h"
-#include "Sprite.h"
-#include "Font.h"
+#include "Tenshi/Log.h"
+#include "Tenshi/Sprite.h"
+#include "Tenshi/Font.h"
 
 namespace Tenshi {
 

@@ -1,6 +1,6 @@
-#include "Scene.h"
+#include "Tenshi/Scene.h"
 
-#include "Game.h"
+#include "Tenshi/Game.h"
 
 namespace Tenshi {
 
