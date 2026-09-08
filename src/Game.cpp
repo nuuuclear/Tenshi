@@ -7,6 +7,17 @@
 #endif
 
 namespace Tenshi {
+
+#ifdef __EMSCRIPTEN__
+Game* Game::emscriptenInstance = nullptr;
+
+void Game::emscriptenStep() {
+    if (emscriptenInstance) {
+        emscriptenInstance->step();
+    }
+}
+#endif
+
 Game::Game() {
 }
 
@@ -23,7 +34,7 @@ Game::~Game() {
 }
 
 bool Game::init(GameConfig conf) {
-    config = &conf;
+    config = conf;
 
     SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "1");
 
@@ -32,9 +43,9 @@ bool Game::init(GameConfig conf) {
     }
     
     window = SDL_CreateWindow(
-        config->title.c_str(), 
-        config->windowWidth, 
-        config->windowHeight, 
+        config.title.c_str(), 
+        config.windowWidth, 
+        config.windowHeight, 
         SDL_WINDOW_RESIZABLE
     );
 
@@ -62,8 +73,8 @@ bool Game::init(GameConfig conf) {
     std::filesystem::path root(basePath);
     filesys.setRoot(root.string());
 
-    #ifdef TENGHI_PACKED
-        filesys.mountPak("", "game.pak");
+    #ifdef TENSHI_PACKED
+        filesys.mountPak("", "resource0.tpk");
     #else
         filesys.mountDirectory("", "resources");
     #endif
@@ -90,9 +101,10 @@ bool Game::init(GameConfig conf) {
 
 void Game::run() {
 #ifdef __EMSCRIPTEN__
+    emscriptenInstance = this;
 
     emscripten_set_main_loop(
-        step,
+        Game::emscriptenStep,
         0,
         true
     );
@@ -197,7 +209,7 @@ void Game::reset(GameConfig conf) {
 }
 
 void Game::rendererSetFixedSize(int w, int h) {
-	SDL_SetRenderLogicalPresentation(renderer, h, w, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+	SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
 }
 
 bool SDLCALL Game::eventWatch(void* userdata, SDL_Event* event) {

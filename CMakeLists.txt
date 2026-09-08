@@ -20,13 +20,14 @@ add_library(miniaudio STATIC
 )
 target_include_directories(miniaudio PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/miniaudio")
 
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory(
     "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/lz4/build/cmake"
     lz4
 )
 
 #########################
-#     tenshi engine     #
+#     Tenshi engine     #
 #########################
 
 set(TENSHI_INCLUDE_DIR "include")
@@ -112,31 +113,110 @@ target_include_directories(tenshi
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# packer
+#####################
+#     Resources     #
+#####################
 
-add_executable(packer_tool
-    tools/pak/main.cpp
+set(TENSHI_RESOURCE_DIR
+    "${CMAKE_SOURCE_DIR}/resources"
 )
 
-target_link_libraries(packer_tool
-    PRIVATE 
-        lz4
+set(TENSHI_PAK_FILE
+    "${CMAKE_BINARY_DIR}/resource0.tpk"
 )
 
-add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/resource0.tpk
-    COMMAND
-        packer_tool
-        ${CMAKE_SOURCE_DIR}/resources
-        ${CMAKE_BINARY_DIR}/resource0.tpk
-    DEPENDS packer_tool
-    COMMENT "Packing game resources"
-)
+if(NOT EMSCRIPTEN)
+
+    # Native packer
+    add_executable(packer_tool
+        tools/pak/main.cpp
+    )
+
+    target_link_libraries(packer_tool
+        PRIVATE
+            lz4
+    )
+
+    add_custom_command(
+        OUTPUT
+            "${TENSHI_PAK_FILE}"
+
+        COMMAND
+            "$<TARGET_FILE:packer_tool>"
+            "${TENSHI_RESOURCE_DIR}"
+            "${TENSHI_PAK_FILE}"
+
+        DEPENDS
+            packer_tool
+
+        COMMENT
+            "Packing game resources"
+
+        VERBATIM
+    )
+else()
+    # Native host packer
+    set(TENSHI_PACKER_BUILD_DIR
+        "${CMAKE_BINARY_DIR}/tenshi_packer"
+    )
+
+    set(TENSHI_PACKER_INSTALL_DIR
+        "${TENSHI_PACKER_BUILD_DIR}/install"
+    )
+
+    ExternalProject_Add(tenshi_packer
+        SOURCE_DIR
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/pak"
+
+        BINARY_DIR
+            "${TENSHI_PACKER_BUILD_DIR}/build"
+
+        INSTALL_DIR
+            "${TENSHI_PACKER_INSTALL_DIR}"
+
+        CMAKE_ARGS
+            -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+
+        BUILD_BYPRODUCTS
+            "${TENSHI_PACKER_INSTALL_DIR}/bin/packer_tool"
+
+        INSTALL_COMMAND
+            "${CMAKE_COMMAND}"
+            --build <BINARY_DIR>
+            --target install
+
+        BUILD_ALWAYS
+            OFF
+    )
+
+    if(WIN32)
+        set(TENSHI_PACKER
+            "${TENSHI_PACKER_INSTALL_DIR}/bin/packer_tool.exe"
+        )
+    else()
+        set(TENSHI_PACKER
+            "${TENSHI_PACKER_INSTALL_DIR}/bin/packer_tool"
+        )
+    endif()
+
+    # Pack resources
+    add_custom_command(
+        OUTPUT
+            "${TENSHI_PAK_FILE}"
+        COMMAND
+            "${TENSHI_PACKER}"
+            "${TENSHI_RESOURCE_DIR}"
+            "${TENSHI_PAK_FILE}"
+        DEPENDS tenshi_packer
+        COMMENT "Packing game resources"
+        VERBATIM
+    )
+endif()
 
 add_custom_target(
     pack_resources
-    ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/resource0.tpk
+    DEPENDS
+        "${TENSHI_PAK_FILE}"
 )
 
 # install

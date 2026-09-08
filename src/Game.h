@@ -35,13 +35,6 @@ public:
     void run(); // starts it running
     void quit();
 
-    void step();
-    void draw();
-
-    // handle unhandled frame logic
-    void pulse();
-    bool redrawRequested = false;
-
     void reset(GameConfig conf);
     void rendererSetFixedSize(int w, int h);
 
@@ -78,7 +71,7 @@ private:
     SDL_Renderer* renderer = nullptr;
     SDL_Surface* applicationSurface = nullptr;
     TTF_TextEngine* text_engine = nullptr;
-    GameConfig* config;
+    GameConfig config;
 
     FileSystem filesys;
 
@@ -91,6 +84,19 @@ private:
 
     // std::unique_ptr<Player> player;
 	// std::unique_ptr<Scene> currentScene;
+
+    void step();
+    void draw();
+
+    // handle unhandled frame logic
+    void pulse();
+    bool redrawRequested = false;
+
+    // emscripten
+#ifdef __EMSCRIPTEN__
+    static Game* emscriptenInstance;
+    static void emscriptenStep();
+#endif
 
     static bool SDLCALL eventWatch(void* userdata, SDL_Event* event);
 

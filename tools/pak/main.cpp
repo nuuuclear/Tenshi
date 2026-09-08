@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <cctype>
 
 #include <lz4.h>
 
@@ -155,7 +156,19 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    fs::path inputDirectory = fs::absolute(argv[1]).lexically_normal();
+    std::string inputString = fs::absolute(argv[1]).lexically_normal().string();
+    
+    // fix filepath bug when building with emscripten on windows
+#ifdef _WIN32
+    if (inputString.size() >= 3 
+    &&  inputString[0] == '/' 
+    &&  std::isalpha(static_cast<unsigned char>(inputString[1])) 
+    &&  inputString[2] == ':') {
+        inputString.erase(0, 1);
+    }
+#endif
+
+    std::filesystem::path inputDirectory(inputString);
     fs::path outputFile = fs::absolute(argv[2]).lexically_normal();
 
     if (!fs::exists(inputDirectory) ||
