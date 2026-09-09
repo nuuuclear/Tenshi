@@ -181,6 +181,8 @@ bool FileSystem::mountPak(
         return false;
     }
 
+    // pak->printFiles();
+
     auto mount = std::make_unique<Mount>();
 
     mount->type = Mount::Type::Pak;

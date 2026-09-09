@@ -25,7 +25,7 @@ public:
 	void setTileset(std::unique_ptr<Tileset> ts);
 	void setTilemap(std::unique_ptr<Tilemap> map);
 
-	void pushActor(Actor* actor);
+	Actor* pushActor(std::unique_ptr<Actor> actor);
 
 	std::unique_ptr<Background>& getBackground();
 	std::unique_ptr<Tileset>& getTileset();

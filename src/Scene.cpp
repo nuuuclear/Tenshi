@@ -33,13 +33,13 @@ void Scene::Draw() {
 	//background->Draw(*camera);
 	//tilemap->Draw(*camera);
 
-	//batch->begin();
+	batch->begin();
 
-	//for (auto& actor : actors) {
-	//	actor->draw(*batch, *camera);
-	//}
+	for (auto& actor : actors) {
+		actor->draw(*batch, *camera);
+	}
 
-	//batch->flush();
+	batch->flush();
 }
 
 void Scene::setBackground(std::unique_ptr<Background> bg) {
@@ -53,8 +53,11 @@ void Scene::setTilemap(std::unique_ptr<Tilemap> map) {
 	tilemap = std::move(map);
 }
 
-void Scene::pushActor(Actor* actor) {
-	actors.emplace_back(actor);
+Actor* Scene::pushActor(std::unique_ptr<Actor> actor) {
+	Actor* ptr = actor.get();
+    actors.push_back(std::move(actor));
+	
+    return ptr;
 }
 
 std::unique_ptr<Background>& Scene::getBackground() {

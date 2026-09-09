@@ -9,7 +9,7 @@ class Input {
 public:
 
     void beginFrame();
-    void poll();
+    void poll(const SDL_Event &e);
 
     SDL_Event* GetEvent();
 
@@ -30,8 +30,6 @@ public:
     bool action(const std::string& action) const;
     bool actionPressed(const std::string& action) const;
     bool actionReleased(const std::string& action) const;
-
-    bool quitRequested() const;
 
 private:
     SDL_Event event;

@@ -19,6 +19,7 @@ public:
     std::unique_ptr<File> open(const std::string& path) const;
 
     uint64_t fileCount() const;
+    void printFiles() const;
 
 private:
     enum class Compression : uint32_t {

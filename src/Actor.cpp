@@ -1,14 +1,24 @@
 #include "Tenshi/Actor.h"
 
 #include "Tenshi/Sprite.h"
+#include "Tenshi/Log.h"
 
 namespace Tenshi {
 
-Actor::Actor() {
-
+Actor::Actor()
+	: sprite(nullptr)
+{
 }
 
 void Actor::init() {
+	if (!sprite) {
+		LogError(
+            LogCategory::Resource,
+            "Actor initialized with out a sprite"
+        );
+        return;
+    }
+
 	x = 0;
 	y = 0;
 	xm = 0;
@@ -20,8 +30,7 @@ void Actor::init() {
 	termvel = 44;
 
 	resist = 2;
-
-	// TODO: add movement types and configurations, such as platformer, free topdown, and grid based topdown movement.
+	
 	speed_walk = 120;
 	speed_jump = 30;
 
@@ -130,17 +139,21 @@ void Actor::act(double dt, const std::vector<Rect>& world) {
 		}
 	}
 
-	if (xm == 1 || xm == -1) {
-		sprite->setBlock("walk");
-	}
-	else {
-		sprite->setBlock("idle");
-	}
+	if (sprite != nullptr) {
+		if (xm == 1 || xm == -1) {
+			sprite->setBlock("walk");
+		}
+		else {
+			sprite->setBlock("idle");
+		}
 
-	sprite->step(dt);
+		sprite->step(dt);
+	}
 }
 
 void Actor::draw(SpriteBatch& batch, const Camera& camera) {
+	if (sprite == nullptr) return; 
+
 	if (facingDirection == -1) {
 		sprite->setFlip(SDL_FLIP_HORIZONTAL);
 	}
@@ -167,9 +180,11 @@ void Actor::setPosition(double _x, double _y) {
 	x = _x;
 	y = _y;
 }
+
 void Actor::setVelocityX(double velx) {
 	velocityX = velx;
 }
+
 void Actor::setVelocityY(double vely) {
 	velocityY = vely;
 }
@@ -182,9 +197,11 @@ void Actor::setSprite(Sprite* spr) {
 Sprite* Actor::getSprite() {
 	return sprite;
 }
+
 double Actor::getVelocityX() {
 	return velocityX;
 }
+
 double Actor::getVelocityY() {
 	return velocityY;
 }

@@ -12,30 +12,35 @@ Player::Player() {
 	// SDL_Renderer* renderer = Angel_GetRenderer();
 }
 
-// TODO: move all actor stuff such as the sprite into the player actor.
-//		 Let the game engine handle the player, this code.
-//		 Make this controll the actor seperatly so that the player class is more 'vague'
-//			so it can do more than just controll an actor, and is more configurable.
-
 void Player::init() {
 
 }
 
 void Player::put(double _x, double _y) {
+	if (actor == nullptr) return;
+
 	actor->put(_x, _y);
 }
 
 // inputs
 void Player::i_move(bool left, bool right) {
+	if (actor == nullptr) return;
+
 	actor->i_move(left, right);
 }
 
 void Player::i_jump(bool jump) {
+	if (actor == nullptr) return;
+
 	actor->i_jump(jump);
 }
 
-void Player::setActor(Actor* act) {
-	actor = act;
+void Player::setActor(Actor* actor) {
+	this->actor = actor;
+}
+
+Actor* Player::getActor() const {
+	return actor;
 }
 
 } // namespace Tenshi

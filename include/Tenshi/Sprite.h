@@ -51,6 +51,7 @@ private:
 class Sprite {
 public:
     Sprite(SDL_Texture* tex, int frameW, int frameH);
+    ~Sprite();
 
     void setImage(int index);
     void setOrigin(float x, float y);

@@ -14,14 +14,10 @@ void Input::beginFrame() {
     m_mouseWheel = 0;
 }
 
-void Input::poll() {
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
+void Input::poll(const SDL_Event &e) {
+    event = e;
 
-        case SDL_EVENT_QUIT:
-            m_quitRequested = true;
-            break;
-
+    switch (event.type) {
         case SDL_EVENT_KEY_DOWN: {
             SDL_Scancode key = event.key.scancode;
 
@@ -31,7 +27,6 @@ void Input::poll() {
             keyDown[key] = true;
             break;
         }
-
         case SDL_EVENT_KEY_UP: {
             SDL_Scancode key = event.key.scancode;
 
@@ -39,7 +34,6 @@ void Input::poll() {
             keyReleased[key] = true;
             break;
         }
-
         case SDL_EVENT_MOUSE_BUTTON_DOWN: {
             int b = event.button.button;
 
@@ -49,7 +43,6 @@ void Input::poll() {
             mouseDown[b] = true;
             break;
         }
-
         case SDL_EVENT_MOUSE_BUTTON_UP: {
             int b = event.button.button;
 
@@ -57,18 +50,14 @@ void Input::poll() {
             mouseReleasedState[b] = true;
             break;
         }
-
         case SDL_EVENT_MOUSE_MOTION: {
             m_mouseX = event.motion.x;
             m_mouseY = event.motion.y;
             break;
         }
-
         case SDL_EVENT_MOUSE_WHEEL: {
             m_mouseWheel = event.wheel.y;
             break;
-        }
-
         }
     }
 }
@@ -139,10 +128,5 @@ bool Input::actionReleased(const std::string& action) const {
     return released(it->second);
 }
 
-// requests
-
-bool Input::quitRequested() const {
-    return m_quitRequested;
-}
 
 } // namespace Tenshi

@@ -26,14 +26,13 @@ public:
 	void i_dash(bool dash);
 
 	// getters
-	Sprite* getActor();
+	Actor* getActor() const;
 
 	// setters
-	void setActor(Actor* act);
+	void setActor(Actor* actor);
 
 private:
-	Actor* actor;
-
+	Actor* actor = nullptr;
 };
 
 } // namespace Tenshi

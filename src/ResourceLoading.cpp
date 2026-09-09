@@ -5,51 +5,68 @@
 #include "Tenshi/Log.h"
 #include "Tenshi/Sprite.h"
 #include "Tenshi/Font.h"
+#include "Tenshi/FileSystem.h"
+
+#include "PakFile.h"
 
 namespace Tenshi {
 
+// Create a new sprite and put it into an AssetManager
 bool MakeSprite(
-	SDL_Renderer* renderer, AssetManager& assets,
-	std::string path, 
-	std::string key, 
-	int width, int height
+    SDL_Renderer* renderer,
+    AssetManager& assets,
+    FileSystem& files,
+    const std::string& path,
+    const std::string& key,
+    int width,
+    int height
 ) {
-	SDL_Texture* texture = IMG_LoadTexture(renderer, path.c_str());
-	if (texture == NULL) {
-		LogDebug(
-			LogCategory::Resource,
-			"Sprite could not be loaded: {}",
-			SDL_GetError()
-		);
+    auto data = files.readAll(path);
+    if (data.empty()) {
+        LogWarning(
+            Tenshi::LogCategory::Resource, 
+            "Could not find image at: {}", 
+            path
+        );
+        return false;
+    }
 
-		return false;
-	}
+    SDL_IOStream* io = SDL_IOFromConstMem(data.data(), data.size());
+    if (!io) return false; 
+    
+    SDL_Texture* texture = IMG_LoadTexture_IO(renderer, io, true);
+    if (!texture) {
+        LogDebug(
+            LogCategory::Resource,
+            "Failed to load sprite '{}': {}",
+            path,
+            SDL_GetError()
+        );
 
-	auto sprite = std::make_shared<Sprite>(texture, width, height);
-	assets.sprite.Add(key, sprite);
+        return false;
+    }
 
-	return true;
+    auto sprite = std::make_unique<Sprite>(texture, width, height);
+    assets.sprite.Add(key, std::move(sprite));
+
+    return true;
 }
 
+// Create a new font and put it into an assetManager
 bool MakeFont(
-	AssetManager& assets,
-	std::string path, 
-	std::string key, 
+	AssetManager& assets, 
+	FileSystem& files,
+	const std::string path, 
+	const std::string key, 
 	float ptsize
 ) {
-	SDL_IOStream* file = SDL_IOFromFile(path.c_str(), "r");
-	if (file == NULL) {
-		LogDebug(
-			LogCategory::Resource,
-			"Failed to open font file: {}",
-			SDL_GetError()
-		);
+	auto data = files.readAll(path);
+    if (data.empty()) return false;
 
-		return false;
-	}
+    SDL_IOStream* io = SDL_IOFromConstMem(data.data(), data.size());
+	if (!io) return false;
 
-	TTF_Font* fontdata = TTF_OpenFontIO(file, true, ptsize);
-
+	TTF_Font* fontdata = TTF_OpenFontIO(io, true, ptsize);
 	if (fontdata == NULL) {
 		LogDebug(
 			LogCategory::Application,
@@ -60,9 +77,10 @@ bool MakeFont(
 		return false;
 	}
 
-	auto font = std::make_shared<Font>();
-	font.get()->Load_FromTTF(fontdata);
-	assets.font.Add(key, font);
+	auto font = std::make_unique<Font>();
+	font->Load_FromTTF(fontdata);
+
+	assets.font.Add(key, std::move(font));
 
 	return true;
 }

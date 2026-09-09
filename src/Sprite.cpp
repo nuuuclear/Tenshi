@@ -2,6 +2,8 @@
 
 #include "Tenshi/Camera.h"
 
+#include <stdexcept>
+
 namespace Tenshi {
 
 SpriteImagePosition SpriteFrame::getRandomImage() const {
@@ -69,16 +71,29 @@ void SpriteBlock::addFrame(const SpriteFrame& f) {
     frames.push_back(f);
 }
 
-Sprite::Sprite(SDL_Texture* tex, int iW, int iH) {
-    texture = tex;
+Sprite::Sprite(SDL_Texture* tex, int iW, int iH)
+    : texture(tex),
+      imageWidth(iW),
+      imageHeight(iH)
+{
+    src = { 0.0f, 0.0f, static_cast<float>(iW), static_cast<float>(iH)};
+    dst = { 0.0f, 0.0f, static_cast<float>(iW), static_cast<float>(iH)};
 
-    imageWidth  = iW;
-    imageHeight = iH;
+    if (!texture) {
+        throw std::runtime_error("Sprite created with null SDL_Texture");
+    }
 
-    src = { 0, 0, (float)iW, (float)iH };
-    dst = { 0, 0, (float)iW, (float)iH };
+    if (imageWidth <= 0 || imageHeight <= 0) {
+        throw std::runtime_error("Sprite created with invalid dimensions");
+    }
 
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+}
+
+Sprite::~Sprite() {
+    if (texture) {
+        SDL_DestroyTexture(texture);
+    }
 }
 
 SpriteBlock& Sprite::createBlock(const std::string& handle) {
@@ -89,12 +104,19 @@ SpriteBlock& Sprite::createBlock(const std::string& handle) {
 void Sprite::setImage(int index) {
     if (!texture) return;
 
+    if (imageWidth <= 0 || imageHeight <= 0)
+        return;
+
+    if (index < 0) return;
+
     image = index;
 
     float texWf, texHf;
-    SDL_GetTextureSize(texture, &texWf, &texHf);
 
-    int texW = (int)texWf;
+    if (!SDL_GetTextureSize(texture, &texWf, &texHf))
+        return;
+
+    int texW = static_cast<int>(texWf);
 
     int columns = texW / imageWidth;
     if (columns <= 0) return;
@@ -102,8 +124,8 @@ void Sprite::setImage(int index) {
     int x = index % columns;
     int y = index / columns;
 
-    src.x = (float)(x * imageWidth);
-    src.y = (float)(y * imageHeight);
+    src.x = static_cast<float>(x * imageWidth);
+    src.y = static_cast<float>(y * imageHeight);
 }
 
 void Sprite::setOrigin(float x, float y) {
@@ -115,12 +137,15 @@ void Sprite::centreOrigin() {
     originX = imageWidth * 0.5;
     originY = imageHeight * 0.5;
 }
+
 void Sprite::setScale(float s) {
     scale = s;
 }
+
 void Sprite::setRotation(float r) {
     rotation = r;
 }
+
 void Sprite::setFlip(SDL_FlipMode f) {
     flip = f;
 }
@@ -140,17 +165,22 @@ void Sprite::step(double dt) {
 }
 
 void Sprite::resetFrame() {
+    if (currentBlock < 0 || currentBlock >= static_cast<int>(blocks.size()))
+        return;
+
     blocks[currentBlock].setFrame(0);
 }
 
 void Sprite::setBlock(const std::string& handle) {
     for (size_t i = 0; i < blocks.size(); i++) {
         if (blocks[i].getHandle() == handle) {
-            currentBlock = (int)i;
+            currentBlock = static_cast<int>(i);
             return;
         }
     }
+    
     // handle not found
+    currentBlock = -1;
 }
 
 void Sprite::draw(SpriteBatch& batch, const Camera& cam, int x, int y) {

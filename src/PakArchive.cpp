@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <iostream>
 
 #include <lz4.h>
 
@@ -276,6 +277,12 @@ bool PakArchive::readEntryData(const Entry& entry, std::vector<uint8_t>& output)
 
 uint64_t PakArchive::fileCount() const {
     return entries.size();
+}
+
+void PakArchive::printFiles() const {
+    for (const auto& [path, entry] : entries) {
+        std::cout << path << '\n';
+    }
 }
 
 } // namespace Tenshi

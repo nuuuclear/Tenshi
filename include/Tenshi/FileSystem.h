@@ -22,25 +22,35 @@ public:
 
 class FileSystem {
 public:
+    // A virtual filesystem.
     FileSystem();
     ~FileSystem();
 
+    // Set the root of the filesystem (most commonly the executable directory)
     void setRoot(const std::string& path);
 
+    // Mount a directory using it's path
     bool mountDirectory(
         const std::string& virtualPath,
         const std::string& directory
     );
 
+    // Mount a Pak file using it's physical path
     bool mountPak(
         const std::string& virtualPath,
         const std::string& pakPath
     );
 
+    // Check if a file or directory exists within the filesystem
     bool exists(const std::string& path) const;
 
+    // Open a file
     std::unique_ptr<File> open(const std::string& path) const;
+
+    // Read all data from a file using it's path
     std::vector<uint8_t> readAll(const std::string& path) const;
+
+    // Resolve a path from the filesystem
     std::string resolve(const std::string& path) const;
 
 private:

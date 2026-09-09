@@ -5,19 +5,27 @@
 
 #include <string>
 
-#include "AssetManager.h"
+#include "Tenshi/AssetManager.h"
 
 namespace Tenshi {
 
+class FileSystem;
+
 bool MakeSprite(
-	SDL_Renderer* renderer, AssetManager& assets, 
-	std::string path, std::string handle, 
-	int width, int height
+    SDL_Renderer* renderer,
+    AssetManager& assets,
+    FileSystem& files,
+    const std::string& path,
+    const std::string& key,
+    int width,
+    int height
 );
 
 bool MakeFont(
 	AssetManager& assets, 
-	std::string path, std::string key, 
+	FileSystem& files,
+	const std::string path, 
+	const std::string key, 
 	float ptsize
 );
 

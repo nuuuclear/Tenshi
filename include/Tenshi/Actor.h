@@ -64,7 +64,7 @@ private:
     int unit;
     uint32_t direction;
 
-    Sprite* sprite;
+    Sprite* sprite = nullptr;
     bool visible;
 
     int facingDirection;

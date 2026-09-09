@@ -63,7 +63,6 @@ bool Game::init(GameConfig conf) {
     }
 
     const char* basePath = SDL_GetBasePath();
-
     if (!basePath) {
         throw std::runtime_error(
             "Could not determine application path"
@@ -73,11 +72,13 @@ bool Game::init(GameConfig conf) {
     std::filesystem::path root(basePath);
     filesys.setRoot(root.string());
 
+    // TODO: Fix this (Probs a cmake issue again)
 #ifdef TENSHI_PACKED
-    filesys.mountPak("", "resource0.tpk");
+    // filesys.mountPak("", "resource0.tpk");
 #else
-    filesys.mountDirectory("", "resources");
+    // filesys.mountDirectory("", "resources");
 #endif
+    filesys.mountPak("", "resource0.tpk");
 
 #ifdef __EMSCRIPTEN__
     renderer = SDL_CreateRenderer(window, NULL);
@@ -152,11 +153,6 @@ void Game::step() {
             case SDL_EVENT_QUIT:
                 running = false;
                 break;
-            case SDL_EVENT_KEY_DOWN:
-                if (event.key.key == SDLK_ESCAPE) {
-                    running = false;
-                }
-                break;
             case SDL_EVENT_WINDOW_RESIZED:
                 emit("windowResize");
                 break;
@@ -179,11 +175,7 @@ void Game::step() {
 }
 
 void Game::draw() {
-    SDL_SetRenderDrawColor(
-        renderer,
-        32, 32, 32, 255 // dark grey
-    );
-
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
     // signal all drawing
