@@ -6,6 +6,8 @@
 #include <emscripten.h>
 #endif
 
+#include "window.h"
+
 namespace Tenshi {
 
 #ifdef __EMSCRIPTEN__
@@ -41,18 +43,10 @@ bool Game::init(GameConfig conf) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Video failed to init: %s", SDL_GetError());
     }
-    
-    window = SDL_CreateWindow(
-        config.title.c_str(), 
-        config.windowWidth, 
-        config.windowHeight, 
-        SDL_WINDOW_RESIZABLE
-    );
 
-    if (!window) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Game failed create window: %s", SDL_GetError());
-        return false;
-    }
+    window = MakeWindow(conf);
+
+    if (!window) return false;
 
     SDL_AddEventWatch(Game::eventWatch, this);
 

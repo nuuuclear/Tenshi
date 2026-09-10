@@ -1,5 +1,7 @@
 #pragma once
+
 #include <vector>
+#include <memory>
 
 namespace Tenshi {
 
@@ -35,12 +37,16 @@ public:
 
     double lerpSpeed = 0.12;
 
-    Actor* followedActor;
-
     void update(double dt);
 
     int getViewX() const;
     int getViewY() const;
+
+    void SetFollowedActor(Actor* followedActor);
+    Actor* GetFollowedActor();
+    
+private:
+    Actor* followedActor;
 };
 
 } // namespace Tenshi

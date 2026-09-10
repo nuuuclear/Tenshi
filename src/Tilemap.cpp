@@ -8,10 +8,10 @@
 
 namespace Tenshi {
 
-Tilemap::Tilemap(Game* game, int w, int h) 
+Tilemap::Tilemap(SDL_Renderer* renderer, int w, int h) 
     : width(w), height(h)
 {
-	batch = new SpriteBatch(game->getRenderer());
+	batch = std::make_unique<SpriteBatch>(renderer);
 }
 
 Tilemap::~Tilemap() {
@@ -34,8 +34,8 @@ void Tilemap::Step(double deltaTime) {
 	// step animation here, when added.
 }
 
-void Tilemap::SetTileset(Tileset *ts) {
-    tileset = ts;
+void Tilemap::SetTileset(std::unique_ptr<Tileset> ts) {
+    tileset = std::move(ts);
 }
 
 void Tilemap::Draw(const Camera& cam) {

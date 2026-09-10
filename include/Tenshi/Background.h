@@ -7,6 +7,7 @@
 #include <vector>
 #include <stdint.h>
 #include <string>
+#include <memory>
 
 namespace Tenshi {
 
@@ -50,15 +51,15 @@ public:
 	void Step(const Camera& cam);
 	void Draw(const Camera& cam);
 
-	void AddLayer(BackgroundLayer* layer);
+	void AddLayer(std::unique_ptr<BackgroundLayer> layer);
 	void RemoveLayer(std::string handle);
 	void SortLayersDepth();
 
 	bool ParallaxEnabled;
 private:
-	SDL_Renderer* renderer;
+	SDL_Renderer* renderer = nullptr;
 
-	std::vector<BackgroundLayer*> layers;
+	std::vector<std::unique_ptr<BackgroundLayer>> layers;
 };
 
 } // namespace Tenshi

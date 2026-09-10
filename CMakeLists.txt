@@ -24,7 +24,7 @@ set(TENSHI_RESOURCE_DIR
 )
 
 set(TENSHI_PAK_FILE
-    "${CMAKE_BINARY_DIR}/resource0.tpk"
+    "${CMAKE_BINARY_DIR}/packed/resource0.tpk"
     CACHE FILEPATH
     "Output resource archive"
 )
@@ -122,6 +122,8 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/PakArchive.h"
         "${TENSHI_SOURCE_DIR}/PakFile.cpp"
         "${TENSHI_SOURCE_DIR}/PakFile.h"
+        "${TENSHI_SOURCE_DIR}/Window.cpp"
+        "${TENSHI_SOURCE_DIR}/Window.h"
 )
 
 target_link_libraries(tenshi

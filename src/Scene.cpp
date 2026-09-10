@@ -20,7 +20,7 @@ void Scene::init() {
 }
 
 void Scene::Step(double dt) {
-	//background->Step(*camera);
+	background->Step(*camera);
 
 	for (auto& actor : actors) {
 		actor->act(dt, worldColliders);
@@ -30,8 +30,8 @@ void Scene::Step(double dt) {
 }
 
 void Scene::Draw() {
-	//background->Draw(*camera);
-	//tilemap->Draw(*camera);
+	background->Draw(*camera);
+	// tilemap->Draw(*camera);
 
 	batch->begin();
 
@@ -49,6 +49,7 @@ void Scene::setBackground(std::unique_ptr<Background> bg) {
 void Scene::setTileset(std::unique_ptr<Tileset> ts) {
 	tileset = std::move(ts);
 }
+
 void Scene::setTilemap(std::unique_ptr<Tilemap> map) {
 	tilemap = std::move(map);
 }

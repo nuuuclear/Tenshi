@@ -43,6 +43,7 @@ private:
 	std::vector<Rect> worldColliders;
 	std::vector<std::unique_ptr<Actor>> actors;
 
+	// TODO: make this a vector, the viewport can have a pointer to one of them.
 	std::unique_ptr<Camera> camera;
 };
 

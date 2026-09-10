@@ -71,4 +71,12 @@ int Camera::getViewY() const {
     return (int)floor(y - viewH / 2);
 }
 
+void Camera::SetFollowedActor(Actor* _followedActor) {
+    followedActor = _followedActor;
+}
+
+Actor* Camera::GetFollowedActor() {
+    return followedActor;
+}
+
 } // namespace Tenshi

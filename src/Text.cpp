@@ -96,13 +96,13 @@ std::string TextRenderer::GetText() {
 	return text;
 }
 
-TextRenderer* Angel_MakeTextRenderer(SDL_Renderer* r, Font* f) {
-	TextRenderer* _rend = new TextRenderer();
+std::unique_ptr<TextRenderer> MakeTextRenderer(SDL_Renderer* renderer, Font* font) {
+	auto new_TextRenderer = std::make_unique<TextRenderer>();
 
-	_rend->SetRenderer(r);
-	_rend->SetFont(f);
+	new_TextRenderer->SetRenderer(renderer);
+	new_TextRenderer->SetFont(font);
 
-	return _rend;
+	return std::move(new_TextRenderer);
 }
 
 } // namespace Tenshi

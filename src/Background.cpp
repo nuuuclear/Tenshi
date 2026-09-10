@@ -130,14 +130,14 @@ void Background::Draw(const Camera& cam) {
 	}
 }
 
-void Background::AddLayer(BackgroundLayer* layer) {
-	layers.push_back(layer);
+void Background::AddLayer(std::unique_ptr<BackgroundLayer> layer) {
+	layers.push_back(std::move(layer));
 }
 
 void Background::RemoveLayer(std::string handle) {
 	layers.erase(
 		std::remove_if(layers.begin(), layers.end(),
-			[&handle](const BackgroundLayer* layer) {
+			[&handle](const std::unique_ptr<BackgroundLayer>& layer) {
 				return layer->handle == handle;
 			}),
 		layers.end()
@@ -145,7 +145,7 @@ void Background::RemoveLayer(std::string handle) {
 }
 
 void Background::SortLayersDepth() {
-	std::sort(layers.begin(), layers.end(), [](BackgroundLayer* a, BackgroundLayer* b) {
+	std::sort(layers.begin(), layers.end(), [](std::unique_ptr<BackgroundLayer>& a, std::unique_ptr<BackgroundLayer>& b) {
 		return a->GetDepth() > b->GetDepth();
 	});
 }

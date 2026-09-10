@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 #include <vector>
+#include <memory>
+
+#include <SDL3/SDL.h>
 
 namespace Tenshi {
 
@@ -12,7 +15,7 @@ class Tileset;
 
 class Tilemap {
 public:
-	Tilemap(Game* game, int w, int h);
+	Tilemap(SDL_Renderer* renderer, int w, int h);
 	~Tilemap();
 
 	bool LoadFromData(const char* dataPath);
@@ -20,10 +23,10 @@ public:
 	void Step(double deltaTime);
 	void Draw(const Camera& cam);
 
-	void SetTileset(Tileset* ts);
+	void SetTileset(std::unique_ptr<Tileset> ts);
 private:
-	SpriteBatch* batch;
-	Tileset* tileset;
+	std::unique_ptr<SpriteBatch> batch;
+	std::unique_ptr<Tileset> tileset;
 
 	int width, height;
 

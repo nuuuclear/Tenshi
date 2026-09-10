@@ -6,6 +6,7 @@
 #include <SDL3_ttf/SDL_textengine.h>
 
 #include <string>
+#include <memory>
 
 namespace Tenshi {
 
@@ -31,12 +32,12 @@ public:
 	std::string GetText();
 	SDL_Color GetColour();
 private:
-	SDL_Renderer* renderer;
-	SDL_Texture* texture;
+	SDL_Renderer* renderer = nullptr;;
+	SDL_Texture* texture = nullptr;;
 
 	SDL_FRect rect;
 	
-	Font* font;
+	Font* font = nullptr;
 	SDL_Color colour;
 
 	float x;
@@ -47,6 +48,6 @@ private:
 	bool dirty = true;
 };
 
-TextRenderer* Angel_MakeTextRenderer(SDL_Renderer* r, Font* f);
+std::unique_ptr<TextRenderer> MakeTextRenderer(SDL_Renderer* renderer, Font* font);
 
 } // namespace Tenshi

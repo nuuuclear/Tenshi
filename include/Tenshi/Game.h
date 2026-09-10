@@ -18,12 +18,14 @@
 namespace Tenshi {
 
 struct GameConfig {
-    std::string title = "game title unset";
+    std::string title = "TENSHI Game";
 
     int windowWidth = 256;
     int windowHeight = 240;
 
     int windowScale = 1;
+
+    bool windowResizable = false;
 };
 
 class Game {
