@@ -20,6 +20,9 @@ TextRenderer::~TextRenderer() {
 }
 
 void TextRenderer::Draw() {
+	if (renderer == nullptr)
+        return;
+
 	if (dirty)
 		RebuildTexture();
 
@@ -28,8 +31,6 @@ void TextRenderer::Draw() {
 }
 
 void TextRenderer::RebuildTexture() {
-	dirty = false;
-
 	if (texture != nullptr) {
 		SDL_DestroyTexture(texture);
 		texture = nullptr;
@@ -51,6 +52,18 @@ void TextRenderer::RebuildTexture() {
 	}
 
 	texture = SDL_CreateTextureFromSurface(renderer, tsurf);
+	
+	if (texture == nullptr) {
+		LogError(
+			LogCategory::Renderer,
+			"Could not create text texture: ",
+			SDL_GetError()
+		);
+		
+		SDL_DestroySurface(tsurf);
+		return;
+	}
+
 	SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 
 	rect.x = x;
@@ -59,6 +72,8 @@ void TextRenderer::RebuildTexture() {
 	rect.h = (float)tsurf->h;
 
 	SDL_DestroySurface(tsurf);
+
+	dirty = false;
 }
 
 void TextRenderer::SubmitText(const char* t) {
@@ -80,16 +95,38 @@ void TextRenderer::SetColour(SDL_Color col) {
 }
 
 void TextRenderer::SetFont(Font* f) {
-	font = f;
-	dirty = true;
+    if (font == f)
+        return;
+
+    font = f;
+    dirty = true;
 }
 
 void TextRenderer::SetRenderer(SDL_Renderer* r) {
-	renderer = r;
+    if (renderer == r)
+        return;
+
+    renderer = r;
+    dirty = true;
+
+    if (texture != nullptr) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
+    }
 }
 
 void TextRenderer::ClearText() {
+ 	text.clear();
 
+    if (texture != nullptr) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
+    }
+
+    rect.w = 0.0f;
+    rect.h = 0.0f;
+
+    dirty = false;
 }
 
 std::string TextRenderer::GetText() {
@@ -102,7 +139,7 @@ std::unique_ptr<TextRenderer> MakeTextRenderer(SDL_Renderer* renderer, Font* fon
 	new_TextRenderer->SetRenderer(renderer);
 	new_TextRenderer->SetFont(font);
 
-	return std::move(new_TextRenderer);
+	return new_TextRenderer;
 }
 
 } // namespace Tenshi

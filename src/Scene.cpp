@@ -12,9 +12,7 @@ Scene::Scene(Game* game) {
 }
 
 Scene::~Scene() {
-	// destructors
 }
-
 
 void Scene::init() {
 }
@@ -31,7 +29,7 @@ void Scene::Step(double dt) {
 
 void Scene::Draw() {
 	background->Draw(*camera);
-	// tilemap->Draw(*camera);
+	tilemap->Draw(*camera);
 
 	batch->begin();
 

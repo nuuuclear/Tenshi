@@ -6,7 +6,7 @@
 #include <emscripten.h>
 #endif
 
-#include "window.h"
+#include "Window.h"
 
 namespace Tenshi {
 

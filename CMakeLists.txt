@@ -12,6 +12,11 @@ option(TENSHI_PACKED
     OFF
 )
 
+option(TENSHI_BUILD_PACKER_ONLY
+    "Build only the native resource packer"
+    OFF
+)
+
 option(TENSHI_INSTALL
     "enable install rules for tenshi"
     OFF
@@ -154,7 +159,23 @@ target_include_directories(tenshi
 # ============================================================
 
 if(TENSHI_PACKED)
-    if(NOT EMSCRIPTEN)
+    # --------------------------------------------------------
+    # Packer-only build
+    # Used by the Emscripten build to create a native packer
+    # --------------------------------------------------------
+    if(TENSHI_BUILD_PACKER_ONLY)
+        add_executable(packer_tool
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/pak/main.cpp"
+        )
+        target_link_libraries(packer_tool
+            PRIVATE
+                lz4
+        )
+
+    # --------------------------------------------------------
+    # Native build
+    # --------------------------------------------------------
+    elseif(NOT EMSCRIPTEN)
         add_executable(packer_tool
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/pak/main.cpp"
         )
@@ -165,17 +186,27 @@ if(TENSHI_PACKED)
         )
 
         add_custom_command(
-            OUTPUT "${TENSHI_PAK_FILE}"
+            OUTPUT
+                "${TENSHI_PAK_FILE}"
+            COMMAND
+                "${CMAKE_COMMAND}"
+                -E
+                make_directory
+                "${CMAKE_BINARY_DIR}/packed"
             COMMAND
                 "$<TARGET_FILE:packer_tool>"
                 "${TENSHI_RESOURCE_DIR}"
                 "${TENSHI_PAK_FILE}"
             DEPENDS
                 packer_tool
-            COMMENT 
+            COMMENT
                 "Packing game resources"
             VERBATIM
         )
+
+    # --------------------------------------------------------
+    # Emscripten build
+    # --------------------------------------------------------
     else()
         # --------------------------------------------------------
         # Emscripten host packer
@@ -200,15 +231,17 @@ if(TENSHI_PACKED)
                 "${TENSHI_PACKER_INSTALL_DIR}"
             CMAKE_ARGS
                 "-DCMAKE_BUILD_TYPE=Release"
+                "-DTENSHI_PACKED=ON"
                 "-DTENSHI_BUILD_PACKER_ONLY=ON"
             BUILD_COMMAND
                 "${CMAKE_COMMAND}"
                 --build .
                 --target packer_tool
+                --config Release
             INSTALL_COMMAND
                 ""
             BUILD_BYPRODUCTS
-                "${TENSHI_PACKER_BUILD_DIR}/packer_tool"
+                "${TENSHI_PACKER_BUILD_DIR}/packer_tool.exe"
         )
 
         if(WIN32)
@@ -225,11 +258,18 @@ if(TENSHI_PACKED)
             OUTPUT
                 "${TENSHI_PAK_FILE}"
             COMMAND
+                "${CMAKE_COMMAND}"
+                -E
+                make_directory
+                "${CMAKE_BINARY_DIR}/packed"
+            COMMAND
                 "${TENSHI_PACKER}"
                 "${TENSHI_RESOURCE_DIR}"
                 "${TENSHI_PAK_FILE}"
-            DEPENDS tenshi_packer
-            COMMENT "Packing game resources"
+            DEPENDS
+                tenshi_packer
+            COMMENT
+                "Packing game resources"
             VERBATIM
         )
     endif()
