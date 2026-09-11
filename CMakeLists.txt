@@ -92,6 +92,10 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/FileSystem.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Player.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Geometry/Rect.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Geometry/Vector.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Frame.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/UIManager.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/UIObject.h"
 
         # Sources
         "${TENSHI_SOURCE_DIR}/Engine.cpp"
@@ -124,6 +128,8 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/PakFile.h"
         "${TENSHI_SOURCE_DIR}/Window.cpp"
         "${TENSHI_SOURCE_DIR}/Window.h"
+        "${TENSHI_SOURCE_DIR}/GUI/UIManager.cpp"
+        "${TENSHI_SOURCE_DIR}/GUI/Frame.cpp"
 )
 
 target_link_libraries(tenshi

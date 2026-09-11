@@ -97,7 +97,7 @@ void Actor::put(double _x, double _y) {
 	setPosition(_x, _y);
 }
 
-void Actor::act(double dt, const std::vector<Rect>& world) {
+void Actor::act(double dt, const std::vector<Rect_d>& world) {
 	velocityX = speed_walk * xm;
 
 	velocityY += gravity * dt;
@@ -110,9 +110,9 @@ void Actor::act(double dt, const std::vector<Rect>& world) {
 	// horizontal
 	x += moveX;
 
-	Rect box = feet.getBounds(x, y);
+	Rect_d box = feet.getBounds(x, y);
 
-	for (const Rect& col : world) {
+	for (const Rect_d& col : world) {
 		if (Collider::intersects(box, col)) {
 			if (moveX > 0)
 				x = col.x - feet.offsetX - feet.w;
@@ -128,7 +128,7 @@ void Actor::act(double dt, const std::vector<Rect>& world) {
 
 	box = feet.getBounds(x, y);
 
-	for (const Rect& col : world) {
+	for (const Rect_d& col : world) {
 		if (Collider::intersects(box, col)) {
 			if (moveY > 0)
 				y = col.y - feet.offsetY - feet.h;

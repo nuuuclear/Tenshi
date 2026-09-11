@@ -72,7 +72,7 @@ std::unique_ptr<Tilemap>& Scene::getTilemap() {
 	return tilemap;
 }
 
-std::vector<Rect>& Scene::getColliders() {
+std::vector<Rect_d>& Scene::getColliders() {
 	return worldColliders;
 }
 std::vector<std::unique_ptr<Actor>>& Scene::getActors() {

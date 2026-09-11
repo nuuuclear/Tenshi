@@ -30,7 +30,7 @@ public:
 	std::unique_ptr<Background>& getBackground();
 	std::unique_ptr<Tileset>& getTileset();
 	std::unique_ptr<Tilemap>& getTilemap();
-	std::vector<Rect>& getColliders();
+	std::vector<Rect_d>& getColliders();
 	std::vector<std::unique_ptr<Actor>>& getActors();
 
 	std::unique_ptr<Camera>& getCamera();
@@ -40,7 +40,7 @@ private:
 	std::unique_ptr<Tileset> tileset;
 	std::unique_ptr<Tilemap> tilemap;
 	std::unique_ptr<Background> background;
-	std::vector<Rect> worldColliders;
+	std::vector<Rect_d> worldColliders;
 	std::vector<std::unique_ptr<Actor>> actors;
 
 	// TODO: make this a vector, the viewport can have a pointer to one of them.

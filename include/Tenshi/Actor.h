@@ -22,7 +22,7 @@ public:
     void put(double _x, double _y);
     void animate();
     void draw(SpriteBatch& batch, const Camera& camera);
-    void act(double dt, const std::vector<Rect>& world);
+    void act(double dt, const std::vector<Rect_d>& world);
 
     void show();
     void halt();

@@ -12,7 +12,7 @@ public:
     double w = 0;
     double h = 0;
 
-    Rect getBounds(double entityX, double entityY) const {
+    Rect_d getBounds(double entityX, double entityY) const {
         return {
             entityX + offsetX,
             entityY + offsetY,
@@ -21,7 +21,7 @@ public:
         };
     }
 
-    static bool intersects(const Rect& a, const Rect& b) {
+    static bool intersects(const Rect_d& a, const Rect_d& b) {
         if (a.x + a.w <= b.x) return false;
         if (b.x + b.w <= a.x) return false;
         if (a.y + a.h <= b.y) return false;
