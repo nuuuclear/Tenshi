@@ -2,7 +2,7 @@
 
 #include "Tenshi/Geometry/Vector.h"
 #include "Tenshi/Geometry/Rect.h"
-#include "Tenshi/GUI/UIObject.h"
+#include "Tenshi/GUI/Object.h"
 
 #include <SDL3/SDL.h>
 

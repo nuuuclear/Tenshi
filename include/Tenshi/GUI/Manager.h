@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Tenshi/Subroutine.h"
-#include "Tenshi/GUI/UIObject.h"
+#include "Tenshi/GUI/Object.h"
 
 #include <SDL3/SDL.h>
 #include <vector>
