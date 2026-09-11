@@ -3,10 +3,17 @@
 
 namespace Tenshi {
 
-void Font::Load_FromTTF(TTF_Font* fontdata) {
-	font = fontdata;
+Font::~Font() {
+	if (m_font) {
+		TTF_CloseFont(m_font);
+	}
+}
 
-	if (font == NULL) {
+void Font::Load_FromTTF(TTF_Font* fontdata, std::vector<uint8_t>&& sourceMemory) {
+	this->m_font = fontdata;
+	this->m_fontDataBuffer = std::move(sourceMemory);
+
+	if (this->m_font == NULL) {
 		LogError(
 			LogCategory::Application,
 			"Failed to open font: ", 
@@ -19,16 +26,12 @@ void Font::Load_FromMemory(const char data) {
 
 }
 
-void Font::Destroy() {
-	TTF_CloseFont(font);
-}
-
 TTF_Font* Font::Get() {
-	return font;
+	return m_font;
 }
 
 void Font::SetSize(float s) {
-	TTF_SetFontSize(font, s);
+	TTF_SetFontSize(m_font, s);
 }
 
 } // namespace Tenshi

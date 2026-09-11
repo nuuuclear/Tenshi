@@ -19,7 +19,7 @@ public:
 
 	void Draw();
 	void RebuildTexture();
-	void SubmitText(const char* t);
+	void SubmitText(const std::string& t);
 
 	void SetPosition(float x, float y);
 
@@ -32,18 +32,19 @@ public:
 	std::string GetText();
 	SDL_Color GetColour();
 private:
-	SDL_Renderer* renderer = nullptr;;
-	SDL_Texture* texture = nullptr;;
+	SDL_Renderer* renderer = nullptr;
+	SDL_Texture* texture = nullptr;
+	SDL_Surface* text_surface = nullptr;
 
-	SDL_FRect rect;
-	
 	Font* font = nullptr;
+	
 	SDL_Color colour;
+	SDL_FRect rect;
 
+	std::string text = "";
+	
 	float x;
 	float y;
-	
-	std::string text;
 
 	bool dirty = true;
 };

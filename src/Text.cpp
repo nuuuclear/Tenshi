@@ -3,20 +3,25 @@
 #include "Tenshi/Font.h"
 #include "Tenshi/Log.h"
 
+#include <cmath>
+
 namespace Tenshi {
 
 TextRenderer::TextRenderer() {
-	x = 0;
-	y = 0;
+    x = 0.0f;
+    y = 0.0f;
+    
+    rect = { 0.0f, 0.0f, 0.0f, 0.0f };
+    colour = { 255, 255, 255, 255 };
 
-	colour = { 255, 255, 255, 255 };
-
-	dirty = true;
+    dirty = true;
 }
 
 TextRenderer::~TextRenderer() {
 	if (texture != nullptr)
 		SDL_DestroyTexture(texture);
+
+	SDL_DestroySurface(text_surface);
 }
 
 void TextRenderer::Draw() {
@@ -26,8 +31,10 @@ void TextRenderer::Draw() {
 	if (dirty)
 		RebuildTexture();
 
-	if (texture != nullptr)
-		SDL_RenderTexture(renderer, texture, NULL, &rect);
+	if (texture != nullptr) {
+        SDL_FRect srcRect = { 0.0f, 0.0f, rect.w, rect.h };
+        SDL_RenderTexture(renderer, texture, &srcRect, &rect);
+    }
 }
 
 void TextRenderer::RebuildTexture() {
@@ -36,22 +43,32 @@ void TextRenderer::RebuildTexture() {
 		texture = nullptr;
 	}
 
-	if (text.empty())
+	if (text.empty()) {
+		rect.w = 0.0f;
+        rect.h = 0.0f;
+
+		dirty = false;
 		return;
+	}
 
-	SDL_Surface* tsurf = TTF_RenderText_Solid(font->Get(), text.c_str(), 0, colour);
+	if (font == nullptr || font->Get() == nullptr) {
+        LogError(LogCategory::Renderer, "TextRenderer has a null font reference pointer");
+        dirty = false;
+        return;
+    }
 
-	if (tsurf == NULL) {
+	text_surface = TTF_RenderText_Blended(font->Get(), text.c_str(), text.length(), colour);
+
+	if (text_surface == NULL) {
 		LogError(
 			LogCategory::Renderer,
 			"Could not render text to the surface: ",
 			SDL_GetError()
 		);
-
 		return;
 	}
 
-	texture = SDL_CreateTextureFromSurface(renderer, tsurf);
+	texture = SDL_CreateTextureFromSurface(renderer, text_surface);
 	
 	if (texture == nullptr) {
 		LogError(
@@ -60,23 +77,27 @@ void TextRenderer::RebuildTexture() {
 			SDL_GetError()
 		);
 		
-		SDL_DestroySurface(tsurf);
+		SDL_DestroySurface(text_surface);
+		text_surface = nullptr;
 		return;
 	}
 
 	SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 
-	rect.x = x;
-	rect.y = y;
-	rect.w = (float)tsurf->w;
-	rect.h = (float)tsurf->h;
+	rect.x = std::trunc(x);
+	rect.y = std::trunc(y);
+	rect.w = (float)text_surface->w;
+	rect.h = (float)text_surface->h;
 
-	SDL_DestroySurface(tsurf);
+	SDL_DestroySurface(text_surface);
+	text_surface = nullptr;
 
 	dirty = false;
 }
 
-void TextRenderer::SubmitText(const char* t) {
+void TextRenderer::SubmitText(const std::string& t) {
+	if (this->text == t) return;
+
 	text = t;
 	dirty = true;
 }

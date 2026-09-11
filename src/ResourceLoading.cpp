@@ -78,7 +78,7 @@ bool MakeFont(
 	}
 
 	auto font = std::make_unique<Font>();
-	font->Load_FromTTF(fontdata);
+	font->Load_FromTTF(fontdata, std::move(data));
 
 	assets.font.Add(key, std::move(font));
 
