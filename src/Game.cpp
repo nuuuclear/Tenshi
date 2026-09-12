@@ -7,6 +7,7 @@
 #endif
 
 #include "Window.h"
+#include "GameHelper.h"
 
 namespace Tenshi {
 
@@ -38,56 +39,32 @@ Game::~Game() {
 bool Game::init(GameConfig conf) {
     config = conf;
 
-    SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "1");
-
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Video failed to init: %s", SDL_GetError());
+    if (!INTERNAL::Initilize()) {
+        return false;
     }
-
+    
     window = MakeWindow(conf);
-
     if (!window) return false;
 
     SDL_AddEventWatch(Game::eventWatch, this);
 
-    bool ttf = TTF_Init();
-    if (!ttf) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF failed to init: %s", SDL_GetError());
-        return false;
-    }
-
-    const char* basePath = SDL_GetBasePath();
-    if (!basePath) {
-        throw std::runtime_error(
-            "Could not determine application path"
-        );
-    }
-
+    const char* basePath = INTERNAL::getBasePath();
     std::filesystem::path root(basePath);
     filesys.setRoot(root.string());
 
     // TODO: Fix this (Probs a cmake issue again)
+    filesys.mountPak("", "resource0.tpk");
 #ifdef TENSHI_PACKED
     // filesys.mountPak("", "resource0.tpk");
 #else
     // filesys.mountDirectory("", "resources");
 #endif
-    filesys.mountPak("", "resource0.tpk");
-
-#ifdef __EMSCRIPTEN__
+    
     renderer = SDL_CreateRenderer(window, NULL);
-#else
-    // renderer = SDL_CreateGPURenderer(NULL, window);
-
-    // FIX THIS: GPURenderer is disabled when resizing/moving a window, so drawing to it will cause a crash.
-    renderer = SDL_CreateRenderer(window, NULL);
-#endif
-
     SDL_SetRenderVSync(renderer, 1);
 
     lastCounter = SDL_GetPerformanceCounter();
     deltaTime = 0.0;
-
     targetFrameTime = 1.0 / 60;
 
     running = true;
@@ -103,7 +80,6 @@ void Game::run() {
         0,
         true
     );
-
 #else
     while (running) {
         step();
@@ -128,14 +104,14 @@ void Game::addSubroutine(std::unique_ptr<Subroutine> subroutine) {
 void Game::step() {
     uint64_t currentCounter = SDL_GetPerformanceCounter();
 
-    deltaTime =
-        (double)(currentCounter - lastCounter) /
-        SDL_GetPerformanceFrequency();
+    deltaTime
+    =   (double)(currentCounter - lastCounter) 
+    /   SDL_GetPerformanceFrequency();
 
     lastCounter = currentCounter;
 
-    // emscripten frame limiting
 #ifdef __EMSCRIPTEN__
+    // emscripten frame limiting
     if (deltaTime < targetFrameTime) {
         SDL_Delay((Uint32)((targetFrameTime - deltaTime) * 1000.0));
     }
@@ -144,12 +120,12 @@ void Game::step() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-            case SDL_EVENT_QUIT:
-                running = false;
-                break;
-            case SDL_EVENT_WINDOW_RESIZED:
-                emit("windowResize");
-                break;
+        case SDL_EVENT_QUIT:
+            running = false;
+            break;
+        case SDL_EVENT_WINDOW_RESIZED:
+            emit("windowResize");
+            break;
         }
 
         // signal all events
@@ -169,8 +145,16 @@ void Game::step() {
 }
 
 void Game::draw() {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
+    if (config.clearFrame) {
+        SDL_SetRenderDrawColor(renderer, 
+            config.clearColour.r,
+            config.clearColour.g,
+            config.clearColour.b,
+            config.clearColour.a
+        );
+
+        SDL_RenderClear(renderer);
+    }
 
     // signal all drawing
     for (auto& subroutine : subroutines) {

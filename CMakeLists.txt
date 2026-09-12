@@ -101,10 +101,12 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Frame.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Manager.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Object.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Colour.h"
 
         # Sources
         "${TENSHI_SOURCE_DIR}/Engine.cpp"
         "${TENSHI_SOURCE_DIR}/Game.cpp"
+        "${TENSHI_SOURCE_DIR}/GameHelper.h"
         "${TENSHI_SOURCE_DIR}/Log.cpp"
         "${TENSHI_SOURCE_DIR}/Input.cpp"
         "${TENSHI_SOURCE_DIR}/Sprite.cpp"

@@ -15,6 +15,8 @@
 #include "FileSystem.h"
 #include "Subroutine.h"
 
+#include "Colour.h"
+
 namespace Tenshi {
 
 struct GameConfig {
@@ -26,6 +28,9 @@ struct GameConfig {
     int windowScale = 1;
 
     bool windowResizable = false;
+
+    bool clearFrame = true;
+    rgba clearColour = {0, 0, 0, 255};
 };
 
 class Game {
@@ -33,8 +38,13 @@ public:
     Game();
     ~Game();
 
+    // Initialize the game
     bool init(GameConfig conf);
-    void run(); // starts it running
+
+    // Start the game loop
+    void run();
+
+    // End the game loop
     void quit();
 
     void reset(GameConfig conf);
@@ -42,32 +52,35 @@ public:
 
     void addSubroutine(std::unique_ptr<Subroutine> subroutine);
 
+    FileSystem& getFileSystem();
+    SDL_Window* getWindow();
+    SDL_Renderer* getRenderer();
+
+    // register a callback event
     template<typename Callable>
     void on(const std::string& eventName, Callable&& callback) {
-        auto func = std::function(std::forward<Callable>(callback));
+        auto func = std::function(
+            std::forward<Callable>(callback)
+        );
         listeners[eventName].push_back(std::any(func));
     }
 
+    // emit a callback event
     template<typename... Args>
     void emit(const std::string& eventName, Args&&... args) {
         auto it = listeners.find(eventName);
-        if (it != listeners.end()) {
-            for (const auto& anyCallback : it->second) {
-                using FuncType = std::function<void(Args...)>;
-                try {
-                    auto callback = std::any_cast<FuncType>(anyCallback);
-                    callback(std::forward<Args>(args)...);
-                } catch (const std::bad_any_cast&) {
-                    std::cerr << "Error: Event signature mismatch for " << eventName << "\n";
-                }
+        if (it == listeners.end()) return;
+
+        for (const auto& anyCallback : it->second) {
+            using FuncType = std::function<void(Args...)>;
+            try {
+                auto callback = std::any_cast<FuncType>(anyCallback);
+                callback(std::forward<Args>(args)...);
+            } catch (const std::bad_any_cast&) {
+                std::cerr << "Error: Event signature mismatch for " << eventName << "\n";
             }
         }
     }
-
-    FileSystem& getFileSystem();
-
-    SDL_Window* getWindow();
-    SDL_Renderer* getRenderer();
 private:
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
@@ -78,33 +91,27 @@ private:
     FileSystem filesys;
 
     double targetFrameTime;
-
 	uint64_t lastCounter;
 	double deltaTime;
 
     bool running = false;
-
-    // std::unique_ptr<Player> player;
-	// std::unique_ptr<Scene> currentScene;
-
+    bool redrawRequested = false;
+    
     void step();
     void draw();
 
     // handle unhandled frame logic
     void pulse();
-    bool redrawRequested = false;
 
-    // emscripten
+    static bool SDLCALL eventWatch(void* userdata, SDL_Event* event);
+    
 #ifdef __EMSCRIPTEN__
     static Game* emscriptenInstance;
     static void emscriptenStep();
 #endif
 
-    static bool SDLCALL eventWatch(void* userdata, SDL_Event* event);
-
     // callbacks
     std::unordered_map<std::string, std::vector<std::any>> listeners;
-
     std::vector<std::unique_ptr<Subroutine>> subroutines;
 };
 
