@@ -34,6 +34,27 @@ set(TENSHI_PAK_FILE
     "Output resource archive"
 )
 
+# --------------------------------------------------------
+# Packer-only build
+# Used by the Emscripten build to create a native packer
+# --------------------------------------------------------
+if(TENSHI_BUILD_PACKER_ONLY)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(
+        "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/lz4/build/cmake"
+        lz4
+    )
+    add_executable(packer_tool
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/pak/main.cpp"
+    )
+    target_link_libraries(packer_tool 
+        PRIVATE 
+            lz4
+    )
+
+    return()
+endif()
+
 # ============================================================
 # External dependencies
 # ============================================================
@@ -164,22 +185,9 @@ target_include_directories(tenshi
 
 if(TENSHI_PACKED)
     # --------------------------------------------------------
-    # Packer-only build
-    # Used by the Emscripten build to create a native packer
-    # --------------------------------------------------------
-    if(TENSHI_BUILD_PACKER_ONLY)
-        add_executable(packer_tool
-            "${CMAKE_CURRENT_SOURCE_DIR}/tools/pak/main.cpp"
-        )
-        target_link_libraries(packer_tool
-            PRIVATE
-                lz4
-        )
-
-    # --------------------------------------------------------
     # Native build
     # --------------------------------------------------------
-    elseif(NOT EMSCRIPTEN)
+    if(NOT EMSCRIPTEN)
         add_executable(packer_tool
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/pak/main.cpp"
         )
@@ -226,6 +234,12 @@ if(TENSHI_PACKED)
             "${CMAKE_BINARY_DIR}/tenshi-packer-install"
         )
 
+        if(CMAKE_HOST_WIN32)
+            set(TENSHI_PACKER_SUFFIX ".exe")
+        else()
+            set(TENSHI_PACKER_SUFFIX "")
+        endif()
+
         ExternalProject_Add(tenshi_packer
             SOURCE_DIR
                 "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -245,18 +259,13 @@ if(TENSHI_PACKED)
             INSTALL_COMMAND
                 ""
             BUILD_BYPRODUCTS
-                "${TENSHI_PACKER_BUILD_DIR}/packer_tool.exe"
+                "${TENSHI_PACKER_BUILD_DIR}/packer_tool${TENSHI_PACKER_SUFFIX}"
         )
 
-        if(WIN32)
-            set(TENSHI_PACKER
-                "${TENSHI_PACKER_BUILD_DIR}/packer_tool.exe"
-            )
-        else()
-            set(TENSHI_PACKER
-                "${TENSHI_PACKER_BUILD_DIR}/packer_tool"
-            )
-        endif()
+        # this executable runs on the build host, not emscripten
+        set(TENSHI_PACKER
+            "${TENSHI_PACKER_BUILD_DIR}/packer_tool${TENSHI_PACKER_SUFFIX}"
+        )
 
         add_custom_command(
             OUTPUT
