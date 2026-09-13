@@ -52,13 +52,10 @@ bool Game::init(GameConfig conf) {
     std::filesystem::path root(basePath);
     filesys.setRoot(root.string());
 
-    // TODO: Fix this (Probs a cmake issue again)
-    filesys.mountPak("", "resource0.tpk");
-#ifdef TENSHI_PACKED
-    // filesys.mountPak("", "resource0.tpk");
-#else
-    // filesys.mountDirectory("", "resources");
-#endif
+    // needs fixing, but this'll do for now...
+    if (!filesys.mountPak("", "resource0.tpk")) {
+        filesys.mountDirectory("", "resources");
+    }
     
     renderer = SDL_CreateRenderer(window, NULL);
     SDL_SetRenderVSync(renderer, 1);
