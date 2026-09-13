@@ -46,10 +46,16 @@ void Scene::setBackground(std::unique_ptr<Background> bg) {
 
 void Scene::setTileset(std::unique_ptr<Tileset> ts) {
 	tileset = std::move(ts);
+	if (tilemap) {
+		tilemap->SetTileset(tileset.get());
+	}
 }
 
 void Scene::setTilemap(std::unique_ptr<Tilemap> map) {
 	tilemap = std::move(map);
+	if (tilemap) {
+		tilemap->SetTileset(tileset.get());
+	}
 }
 
 Actor* Scene::pushActor(std::unique_ptr<Actor> actor) {

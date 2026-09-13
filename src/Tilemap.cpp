@@ -1,95 +1,534 @@
 #include "Tenshi/Tilemap.h"
 
-#include "Tenshi/Game.h"
-#include "Tenshi/Tileset.h"
 #include "Tenshi/Camera.h"
-#include "Tenshi/SpriteBatch.h"
 #include "Tenshi/Sprite.h"
+#include "Tenshi/SpriteBatch.h"
+#include "Tenshi/Tileset.h"
+#include "TilemapFormat.h"
+
+#include <algorithm>
+#include <cstring>
+#include <fstream>
 
 namespace Tenshi {
+namespace {
 
-Tilemap::Tilemap(SDL_Renderer* renderer, int w, int h) 
-    : width(w), height(h)
+bool ReadFile(const char* path, std::vector<uint8_t>& output) {
+    if (path == nullptr)
+        return false;
+
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file) return false;
+
+    const std::streamsize size = file.tellg();
+
+    if (size < 0)
+        return false;
+
+    file.seekg(0, std::ios::beg);
+
+    output.resize(static_cast<size_t>(size));
+
+    if (size > 0) {
+        if (!file.read(reinterpret_cast<char*>(output.data()), size)) {
+            output.clear();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool RangeValid(size_t fileSize, uint32_t offset, uint32_t size) {
+    const size_t start = static_cast<size_t>(offset);
+    const size_t length = static_cast<size_t>(size);
+
+    if (start > fileSize)
+        return false;
+
+    if (length > fileSize - start)
+        return false;
+
+    return true;
+}
+
+const char* GetString(const std::vector<uint8_t>& data, uint32_t offset, uint32_t length) {
+    if (!RangeValid(data.size(), offset, length)) {
+        return nullptr;
+    }
+
+    return reinterpret_cast<const char*>(data.data() + offset);
+}
+
+} // namespace
+
+MapLayer::MapLayer(int width, int height)
+    : width(width)
+    , height(height)
 {
-	batch = std::make_unique<SpriteBatch>(renderer);
+    const size_t count = static_cast<size_t>(width) * height;
+
+    tiles.resize(count, AIR_TILE);
+    attributes.resize(count, 0);
 }
 
-Tilemap::~Tilemap() {
-	batch = nullptr;
+TileId MapLayer::GetTile(int x, int y) const {
+    if (x < 0 
+    ||  y < 0 
+    ||  x >= width 
+    ||  y >= height
+    ) {
+        return AIR_TILE;
+    }
+
+    return tiles[
+        static_cast<size_t>(y) * width + x
+    ];
 }
 
-// Load tile map from .ena file.
-	// TODO: Actually make that format, and it's editor!!!
-bool Tilemap::LoadFromData(const char* dataPath) {
-	// for now: fill with junk data
+uint8_t MapLayer::GetAttributes(int x, int y) const {
+    if (x < 0 
+    ||  y < 0 
+    ||  x >= width 
+    ||  y >= height
+    ) {
+        return 0;
+    }
 
-	for (size_t i = 0; i < height * width; i++) {
-		map.push_back(rand() % 1024);
-	}
+    return attributes[
+        static_cast<size_t>(y) * width + x
+    ];
+}
+
+void MapLayer::SetTile(int x, int y, TileId tile) {
+    if (x < 0 
+    ||  y < 0 
+    ||  x >= width 
+    ||  y >= height
+    ) {
+        return;
+    }
+
+    tiles[static_cast<size_t>(y) * width + x] = tile;
+}
+
+void MapLayer::SetAttributes(int x, int y, uint8_t value) {
+    if (x < 0 
+    ||  y < 0 
+    ||  x >= width 
+    ||  y >= height
+    ) {
+        return;
+    }
+
+    attributes[static_cast<size_t>(y) * width + x] = value;
+}
+
+const std::vector<TileId>& MapLayer::GetTiles() const {
+    return tiles;
+}
+
+const std::vector<uint8_t>& MapLayer::GetAttributes() const {
+    return attributes;
+}
+
+std::vector<TileId>& MapLayer::GetTiles() {
+    return tiles;
+}
+
+std::vector<uint8_t>& MapLayer::GetAttributes() {
+    return attributes;
+}
+
+int MapLayer::GetWidth() const {
+    return width;
+}
+
+int MapLayer::GetHeight() const {
+    return height;
+}
+
+Tilemap::Tilemap(SDL_Renderer* renderer,int width, int height)
+    : width(width)
+    , height(height)
+{
+    batch = std::make_unique<SpriteBatch>(renderer);
+
+    collision.resize(
+        static_cast<size_t>(width) * height,
+        static_cast<uint8_t>(TileColliderType::NONE)
+    );
+}
+
+Tilemap::~Tilemap() = default;
+bool Tilemap::Load(const char* path) {
+    std::vector<uint8_t> data;
+
+    if (!ReadFile(path, data))
+        return false;
+
+    if (data.size() < sizeof(TMapHeader))
+        return false;
+
+    const auto* header = reinterpret_cast<const TMapHeader*>(
+        data.data()
+    );
+
+    if (std::memcmp(header->magic, "TMAP", 4) != 0) {
+        return false;
+    }
+
+    if (header->version != TMAP_VERSION)
+        return false;
+
+    if (header->width == 0 
+    ||  header->height == 0
+    ) {
+        return false;
+    }
+
+    if (header->layerCount == 0)
+        return false;
+
+    const size_t transitionEntrySize = static_cast<size_t>(
+        header->entryCount
+    ) * sizeof(TMapTransition);
+
+    if (!RangeValid(
+            data.size(),
+            header->entriesOffset,
+            static_cast<uint32_t>(transitionEntrySize)
+        )
+    ) {
+        return false;
+    }
+
+    const size_t transitionExitSize 
+    =   static_cast<size_t>(header->exitCount) 
+    *   sizeof(TMapTransition);
+
+    if (!RangeValid(
+            data.size(),
+            header->exitsOffset,
+            static_cast<uint32_t>(transitionExitSize)
+        )
+    ) {
+        return false;
+    }
+
+    const size_t layerTableSize 
+    =   static_cast<size_t>(header->layerCount) 
+    *   sizeof(TMapLayer);
+
+    if (!RangeValid(
+            data.size(),
+            header->layersOffset,
+            static_cast<uint32_t>(layerTableSize)
+        )
+    ) {
+        return false;
+    }
+
+    const char* mapNameData = GetString(
+        data,
+        header->mapNameOffset,
+        header->mapNameLength
+    );
+
+    const char* tilesetNameData = GetString(
+        data,
+        header->tilesetNameOffset,
+        header->tilesetNameLength
+    );
+
+    if (!mapNameData 
+    ||  !tilesetNameData) {
+        return false;
+    }
+
+    width = header->width;
+    height = header->height;
+
+    name.assign(mapNameData, header->mapNameLength);
+    tilesetName.assign(tilesetNameData, header->tilesetNameLength);
+
+    entries.resize(header->entryCount);
+
+    if (!entries.empty()) {
+        std::memcpy(
+            entries.data(),
+            data.data() 
+            +   header->entriesOffset,
+            entries.size() 
+            *   sizeof(TMapTransition)
+        );
+    }
+
+    exits.resize(
+        header->exitCount
+    );
+
+    if (!exits.empty()) {
+        std::memcpy(
+            exits.data(),
+            data.data() 
+            +   header->exitsOffset,
+            exits.size() 
+            *   sizeof(TMapTransition)
+        );
+    }
+
+    const size_t tileCount = static_cast<size_t>(width) * height;
+
+    if (!RangeValid(
+        data.size(),
+        header->collisionOffset,
+        static_cast<uint32_t>(tileCount)
+    )) {
+        return false;
+    }
+
+    collision.resize(tileCount);
+
+    std::memcpy(
+        collision.data(),
+        data.data() 
+        +   header->collisionOffset,
+        tileCount
+    );
+
+    const auto* layerHeaders = reinterpret_cast<const TMapLayer*>(
+        data.data() 
+        +   header->layersOffset
+    );
+
+    layers.clear();
+    layers.reserve(header->layerCount);
+
+    const size_t expectedTileBytes 
+    =   tileCount 
+    *   sizeof(TileId);
+
+    const size_t expectedAttributeBytes 
+    =   tileCount 
+    *   sizeof(uint8_t);
+
+    for (uint16_t i = 0; i < header->layerCount; ++i) {
+        const TMapLayer& fileLayer = layerHeaders[i];
+
+        if (fileLayer.tileDataSize !=
+            expectedTileBytes) {
+            return false;
+        }
+
+        if (fileLayer.attributeDataSize !=
+            expectedAttributeBytes) {
+            return false;
+        }
+
+        if (!RangeValid(
+                data.size(),
+                fileLayer.tileDataOffset,
+                fileLayer.tileDataSize
+            )
+        ) {
+            return false;
+        }
+
+        if (!RangeValid(
+                data.size(),
+                fileLayer.attributeDataOffset,
+                fileLayer.attributeDataSize
+            )
+        ) {
+            return false;
+        }
+
+        MapLayer layer(width, height);
+        layer.depth = fileLayer.depth;
+
+        std::memcpy(
+            layer.GetTiles().data(),
+            data.data() 
+            +   fileLayer.tileDataOffset,
+            fileLayer.tileDataSize
+        );
+
+        std::memcpy(
+            layer.GetAttributes().data(),
+            data.data() 
+            +   fileLayer.attributeDataOffset,
+            fileLayer.attributeDataSize
+        );
+
+        layers.emplace_back(std::move(layer));
+    }
 
     return true;
 }
 
 void Tilemap::Step(double deltaTime) {
-	// step animation here, when added.
+    // step animation etc...
+    (void)deltaTime;
 }
 
-void Tilemap::SetTileset(std::unique_ptr<Tileset> ts) {
-    tileset = std::move(ts);
-}
+void Tilemap::Draw(const Camera& camera) {
+    if (!tileset) return;
 
-void Tilemap::Draw(const Camera& cam) {
-    int tw = tileset->GetTileWidth();
-    int th = tileset->GetTileHeight();
+    Sprite* sprite = tileset->GetSprite();
+    if (!sprite) return;
 
-    int camX = cam.getViewX();
-    int camY = cam.getViewY();
+    const int tileWidth = tileset->GetTileWidth();
+    const int tileHeight = tileset->GetTileHeight();
 
-    // visible tile range
-    int startX = camX / tw;
-    int startY = camY / th;
+    if (tileWidth <= 0 
+    ||  tileHeight <= 0
+    ) {
+        return;
+    }
 
-    int endX = (camX + cam.viewW) / tw + 1;
-    int endY = (camY + cam.viewH) / th + 1;
+    const int camX = camera.getViewX();
+    const int camY = camera.getViewY();
 
-    Sprite* spr = tileset->GetSprite();
+    const int startX = std::max(
+        0,
+        camX / tileWidth
+    );
+
+    const int startY = std::max(
+        0,
+        camY / tileHeight
+    );
+
+    const int endX = std::min(
+        width,
+        (camX + camera.viewW) 
+        /   tileWidth + 1
+    );
+
+    const int endY = std::min(
+        height,
+        (camY + camera.viewH) 
+        /   tileHeight + 1
+    );
 
     batch->begin();
 
-    for (int j = startY; j < endY; j++) {
-        for (int i = startX; i < endX; i++) {
+    for (const MapLayer& layer : layers) {
+        for (int y = startY; y < endY; ++y) {
+            for (int x = startX; x < endX; ++x) {
+                const TileId tileId = layer.GetTile(x, y);
 
-            // bounds check
-            if (i < 0 || j < 0 || i >= width || j >= height)
-                continue;
+                if (tileId == AIR_TILE) continue;
 
-            uint16_t tileid = map[j * width + i];
-            Tile tile = tileset->Index(tileid);
+                const TilesetTile* tile = tileset->GetTile(tileId);
+                if (!tile) continue;
 
-            SDL_FRect dst;
-            dst.x = (i * tw) - camX;
-            dst.y = (j * th) - camY;
-            dst.w = tw;
-            dst.h = th;
+                SDL_FRect source;
 
-            SDL_FRect src;
-            src.x = tile.x * tw;
-            src.y = tile.y * th;
-            src.w = tw;
-            src.h = th;
+                source.x = static_cast<float>(tile->x * tileWidth);
+                source.y = static_cast<float>(tile->y * tileHeight);
 
-            batch->draw(
-                spr->GetTexture(),
-                src,
-                dst,
-                0.0f,
-                { 0, 0 },
-                SDL_FLIP_NONE
-            );
+                source.w = static_cast<float>(tileWidth);
+                source.h = static_cast<float>(tileHeight);
+
+                SDL_FRect destination;
+
+                destination.x = static_cast<float>(x * tileWidth - camX);
+                destination.y = static_cast<float>(y * tileHeight - camY);
+                destination.w = static_cast<float>(tileWidth);
+                destination.h = static_cast<float>(tileHeight);
+
+                batch->draw(
+                    sprite->GetTexture(),
+                    source,
+                    destination,
+                    0.0f,
+                    { 0.0f, 0.0f },
+                    SDL_FLIP_NONE
+                );
+            }
         }
     }
 
     batch->flush();
+}
+
+void Tilemap::SetTileset(Tileset* ts) {
+    tileset = ts;
+}
+
+int Tilemap::GetWidth() const {
+    return width;
+}
+
+int Tilemap::GetHeight() const {
+    return height;
+}
+
+const std::string& Tilemap::GetName() const {
+    return name;
+}
+
+const std::string& Tilemap::GetTilesetName() const {
+    return tilesetName;
+}
+
+size_t Tilemap::GetLayerCount() const {
+    return layers.size();
+}
+
+MapLayer* Tilemap::GetLayer(size_t index) {
+    if (index >= layers.size())
+        return nullptr;
+
+    return &layers[index];
+}
+
+const MapLayer* Tilemap::GetLayer(size_t index) const {
+    if (index >= layers.size())
+        return nullptr;
+
+    return &layers[index];
+}
+
+uint8_t Tilemap::GetCollision(int x, int y) const {
+    if (x < 0 
+    ||  y < 0 
+    ||  x >= width 
+    ||  y >= height
+    ) {
+        return static_cast<uint8_t>(TileColliderType::NONE);
+    }
+
+    return collision[static_cast<size_t>(y) * width + x];
+}
+
+void Tilemap::SetCollision(int x, int y, uint8_t type) {
+    if (x < 0 
+    ||  y < 0 
+    ||  x >= width 
+    ||  y >= height) {
+        return;
+    }
+
+    collision[static_cast<size_t>(y) * width + x] = type;
+}
+
+const MapTransition* Tilemap::GetEntry(uint32_t id) const {
+    for (const auto& entry : entries) {
+        if (entry.id == id) return &entry;
+    }
+
+    return nullptr;
+}
+
+const MapTransition* Tilemap::GetExit(uint32_t id) const {
+    for (const auto& exit : exits) {
+        if (exit.id == id) return &exit;
+    }
+
+    return nullptr;
 }
 
 } // namespace Tenshi

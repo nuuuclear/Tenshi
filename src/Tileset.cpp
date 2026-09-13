@@ -1,50 +1,71 @@
 #include "Tenshi/Tileset.h"
 
-#include <random>
-#include <SDL3/SDL.h>
+#include <cstdlib>
 
 namespace Tenshi {
 
 Tileset::Tileset() {
-	tileWidth = 16;
-	tileHeight = 16;
-}
-Tileset::~Tileset() {
-
+    tileWidth = 16;
+    tileHeight = 16;
 }
 
-// get sprite from the global asset registry
+Tileset::~Tileset() = default;
+
 bool Tileset::SetSprite(Sprite* spr) {
-	sprite = spr;
-	return sprite != nullptr;
+    sprite = spr;
+    return sprite != nullptr;
 }
 
-// Load tileset data from .ena file
 bool Tileset::LoadFromData(const char* dataPath) {
-	// for now: fill with junk data
-	int length = sizeof(index) / sizeof(index[0]);
+    if (dataPath == nullptr)
+        return false;
 
-	for (int i = 0; i < length; i++) {
-		index[i].x = rand() % 32;
-		index[i].y = rand() % 32;
-	}
+    // TODO: load from file the tileset data
 
-	return true;
+    constexpr int tilesWide = 32;
+    constexpr int tilesHigh = 32;
+
+    tiles.clear();
+    tiles.resize(tilesWide * tilesHigh);
+
+    for (int y = 0; y < tilesHigh; ++y) {
+        for (int x = 0; x < tilesWide; ++x) {
+            const size_t index 
+			=	static_cast<size_t>(y) 
+			* 	tilesWide + x;
+
+            tiles[index].x = static_cast<uint8_t>(x);
+            tiles[index].y = static_cast<uint8_t>(y);
+            tiles[index].flags = 0;
+            tiles[index].defaultCollider 
+			=	TileColliderType::NONE;
+        }
+    }
+
+    return true;
 }
 
 uint8_t Tileset::GetTileWidth() const {
-	return tileWidth;
+    return tileWidth;
 }
+
 uint8_t Tileset::GetTileHeight() const {
-	return tileHeight;
+    return tileHeight;
 }
 
 Sprite* Tileset::GetSprite() {
-	return sprite;
+    return sprite;
 }
 
-Tile Tileset::Index(uint16_t tileid) {
-	return index[tileid];
+const TilesetTile* Tileset::GetTile(TileId tileid) const {
+    if (tileid >= tiles.size())
+        return nullptr;
+
+    return &tiles[tileid];
+}
+
+size_t Tileset::GetTileCount() const {
+    return tiles.size();
 }
 
 } // namespace Tenshi
