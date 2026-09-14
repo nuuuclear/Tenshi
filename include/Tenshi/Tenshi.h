@@ -25,7 +25,6 @@
 #include "Tenshi/Sound.h"
 #include "Tenshi/Sprite.h"
 #include "Tenshi/SpriteBatch.h"
-#include "Tenshi/SpriteSheet.h"
 #include "Tenshi/Subroutine.h"
 #include "Tenshi/Tenshi.h"
 #include "Tenshi/Text.h"
