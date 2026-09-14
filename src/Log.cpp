@@ -37,11 +37,7 @@ const char* GetCategoryName(LogCategory category) {
     return "Unknown";
 }
 
-void DefaultLogOutput(
-    LogPriority priority,
-    LogCategory category,
-    std::string_view message
-) {
+void DefaultLogOutput(LogPriority priority, LogCategory category, std::string_view message) {
     std::lock_guard lock(logMutex);
 
     std::ostream& stream
@@ -62,32 +58,20 @@ void DefaultLogOutput(
 
 } // namespace
 
-void SetLogOutputFunction(
-    LogOutputFunction function,
-    void* userdata
-) {
+void SetLogOutputFunction(LogOutputFunction function, void* userdata) {
     std::lock_guard lock(logMutex);
 
     outputFunction = function;
     outputUserdata = userdata;
 }
 
-void LogMessage(
-    LogPriority priority,
-    LogCategory category,
-    std::string_view message
-) {
+void LogMessage(LogPriority priority, LogCategory category, std::string_view message) {
     if (outputFunction) {
-        outputFunction(
-            priority,
-            category,
-            message,
-            outputUserdata
-        );
+        outputFunction(priority, category, message, outputUserdata);
 
         return;
     }
-
+    
     DefaultLogOutput(priority, category, message);
 }
 
