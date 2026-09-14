@@ -3,13 +3,17 @@
 #include <memory>
 
 #include "Tenshi/Log.h"
+#include "Tenshi/FileSystem.h"
+#include "Tenshi/Audio.h"
 #include "Tenshi/Sprite.h"
 #include "Tenshi/Font.h"
-#include "Tenshi/FileSystem.h"
+#include "Tenshi/Sound.h"
 
 #include "PakFile.h"
 
 namespace Tenshi {
+    
+// this only has factories, probs should move these elsewhere...
 
 // Create a new sprite and put it into an AssetManager
 bool MakeSprite(
@@ -52,7 +56,7 @@ bool MakeSprite(
     return true;
 }
 
-// Create a new font and put it into an assetManager
+// Create a new font and put it into an AssetManager
 bool MakeFont(
 	AssetManager& assets, 
 	FileSystem& files,
@@ -83,6 +87,41 @@ bool MakeFont(
 	assets.font.Add(key, std::move(font));
 
 	return true;
+}
+
+// Create a new sound and put it into an AssetManager
+bool MakeSound(
+    AssetManager& assets,
+    FileSystem& files,
+    AudioSystem& audio,
+    const std::string& path,
+    const std::string& key
+) {
+    auto data = files.readAll(path);
+    if (data.empty()) {
+        LogWarning(
+            LogCategory::Resource,
+            "Could not find audio file at: {}",
+            path
+        );
+
+        return false;
+    }
+
+    auto sound = std::make_unique<Sound>();
+    if (!sound->Load(audio, std::move(data))) {
+        LogWarning(
+            LogCategory::Resource,
+            "Found but failed to load audio file: {}",
+            path
+        );
+
+        return false;
+    }
+
+    assets.sound.Add(key, std::move(sound));
+
+    return true;
 }
 
 } // namespace Tenshi

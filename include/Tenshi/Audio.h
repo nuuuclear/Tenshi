@@ -1,31 +1,33 @@
 #pragma once
 
-#include <SDL3/SDL.h>
 #include <miniaudio.h>
 
 namespace Tenshi {
 
-class Sound;
+class AudioSystem {
+public:
+    AudioSystem();
+    ~AudioSystem();
 
-bool AudioInit();
-bool AudioStart();
-void AudioEnd();
+    AudioSystem(const AudioSystem&) = delete;
+    AudioSystem& operator=(const AudioSystem&) = delete;
 
-// audio objects
-Sound* MakeSound();
-void DestroySound();
+    bool Init();
+    bool Start();
+    void Shutdown();
 
-void PutSound(const char* path);
+    bool IsInitialized() const;
 
-void PlaySound();
-void StopSound();
-void ResetSound();
+    ma_engine* GetEngine();
 
-void SoundSetFreq();
-void SoundSetVol();
-void SoundSetPan();
-void SoundSetAutomation();
+    void SetMasterVolume(float volume);
+    float GetMasterVolume() const;
 
-void SoundSetCallback();
+private:
+    ma_engine engine{};
+    
+    bool initialized = false;
+    bool started = false;
+};
 
-}
+} // namespace Tenshi

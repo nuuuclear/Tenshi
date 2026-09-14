@@ -29,4 +29,12 @@ bool MakeFont(
 	float ptsize
 );
 
+bool MakeSound(
+    AssetManager& assets,
+    FileSystem& files,
+    AudioSystem& audio,
+    const std::string& path,
+    const std::string& key
+);
+
 } // namespace Tenshi

@@ -14,6 +14,7 @@
 
 #include "FileSystem.h"
 #include "Subroutine.h"
+#include "Audio.h"
 
 #include "Colour.h"
 
@@ -53,6 +54,7 @@ public:
     void addSubroutine(std::unique_ptr<Subroutine> subroutine);
 
     FileSystem& getFileSystem();
+    AudioSystem& getAudioSystem();
     SDL_Window* getWindow();
     SDL_Renderer* getRenderer();
 
@@ -85,10 +87,12 @@ private:
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
     SDL_Surface* applicationSurface = nullptr;
-    TTF_TextEngine* text_engine = nullptr;
     GameConfig config;
-
+    
+    TTF_TextEngine* text_engine = nullptr; // migrate to ui system when implemented!
+    
     FileSystem filesys;
+    AudioSystem audiosys;
 
     double targetFrameTime;
 	uint64_t lastCounter;

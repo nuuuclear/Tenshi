@@ -7,11 +7,16 @@ namespace Tenshi {
 namespace INTERNAL {
 
 // Initialize backends
-bool Initilize() {
+bool Initialize() {
     SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "1");
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Video failed to init: %s", SDL_GetError());
+        return false;
+    }
+
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Audio failed to init: %s", SDL_GetError());
         return false;
     }
 

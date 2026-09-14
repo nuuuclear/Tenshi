@@ -28,6 +28,7 @@ Game::~Game() {
     SDL_RemoveEventWatch(Game::eventWatch, this);
 
     subroutines.clear();
+    audiosys.Shutdown();
 
     TTF_DestroyRendererTextEngine(text_engine);
     SDL_DestroyRenderer(renderer);
@@ -39,7 +40,7 @@ Game::~Game() {
 bool Game::init(GameConfig conf) {
     config = conf;
 
-    if (!INTERNAL::Initilize()) {
+    if (!INTERNAL::Initialize()) {
         return false;
     }
     
@@ -59,6 +60,20 @@ bool Game::init(GameConfig conf) {
     
     renderer = SDL_CreateRenderer(window, NULL);
     SDL_SetRenderVSync(renderer, 1);
+
+    if (!audiosys.Init()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Audio engine failed to initialize");
+        return false;
+    }
+
+#ifndef __EMSCRIPTEN__
+    if (!audiosys.Start()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Audio device failed to start");
+        return false;
+    }
+#endif
+
+    audiosys.SetMasterVolume(1.0f);
 
     lastCounter = SDL_GetPerformanceCounter();
     deltaTime = 0.0;
@@ -116,6 +131,11 @@ void Game::step() {
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+#ifdef __EMSCRIPTEN__
+        // browser audio must be started from a user interaction
+        // retrying wont do anything until the first event happens
+        audiosys.Start();
+#endif
         switch (event.type) {
         case SDL_EVENT_QUIT:
             running = false;
@@ -193,6 +213,10 @@ bool SDLCALL Game::eventWatch(void* userdata, SDL_Event* event) {
 
 FileSystem& Game::getFileSystem() {
     return filesys;
+}
+
+AudioSystem& Game::getAudioSystem() {
+    return audiosys;
 }
 
 SDL_Window* Game::getWindow() {

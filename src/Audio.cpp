@@ -1,73 +1,76 @@
-#include <stdio.h>
-
 #include "Tenshi/Audio.h"
-#include "Tenshi/Log.h"
-
-#include "Tenshi/Sound.h"
 
 namespace Tenshi {
 
-void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
-	ma_decoder* pDecoder = (ma_decoder*)pDevice->pUserData;
-	if (pDecoder == NULL) {
-		return;
-	}
-
-	ma_decoder_read_pcm_frames(pDecoder, pOutput, frameCount, NULL);
-
-	(void)pInput;
+AudioSystem::AudioSystem() {
 }
 
-ma_result result;
-ma_decoder decoder;
-ma_device_config deviceConfig;
-ma_device device;
-
-bool AudioInit() {
-	deviceConfig = ma_device_config_init(ma_device_type_playback);
-	deviceConfig.playback.format = decoder.outputFormat;
-	deviceConfig.playback.channels = decoder.outputChannels;
-	deviceConfig.sampleRate = decoder.outputSampleRate;
-	deviceConfig.dataCallback = data_callback;
-	deviceConfig.pUserData = &decoder;
-
-	if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
-		printf("<Miniaudio> Failed to open playback device.\n");
-		ma_decoder_uninit(&decoder);
-		return false;
-	}
-
-	return true;
+AudioSystem::~AudioSystem() {
+    Shutdown();
 }
 
-bool AudioStart() {
-	if (ma_device_start(&device) != MA_SUCCESS) {
-		printf("<Miniaudio> Failed to start playback device.\n");
+bool AudioSystem::Init() {
+    if (initialized)
+        return true;
 
-		AudioEnd();
-		return false;
-	}
+    ma_engine_config config = ma_engine_config_init();
+    
+    // don't start device yet
+    config.noAutoStart = MA_TRUE;
+    ma_result result = ma_engine_init(&config, &engine);
 
-	return true;
+    if (result != MA_SUCCESS)
+        return false;
+
+    initialized = true;
+
+    return true;
 }
 
-void AudioEnd() {
-	ma_device_uninit(&device);
-	ma_decoder_uninit(&decoder);
-	//SDL_CloseAudioDevice(device);
-	//SDL_QuitSubSystem(SDL_INIT_AUDIO);
+bool AudioSystem::Start() {
+    if (!initialized || started)
+        return initialized;
+
+    if (ma_engine_start(&engine) != MA_SUCCESS)
+        return false;
+
+    started = true;
+    return true;
 }
 
-// very simple for now
-void PutSound(const char* path) {
-	result = ma_decoder_init_file(path, NULL, &decoder);
-	if (result != MA_SUCCESS) {
-		LogWarning(
-			LogCategory::Resource,
-			"<Miniaudio> could not load file: {}",
-			path
-		);
-	}
+void AudioSystem::Shutdown() {
+    if (!initialized)
+        return;
+
+    ma_engine_uninit(&engine);
+
+    initialized = false;
+    started = false;
+}
+
+bool AudioSystem::IsInitialized() const {
+    return initialized;
+}
+
+ma_engine* AudioSystem::GetEngine() {
+    if (!initialized)
+        return nullptr;
+
+    return &engine;
+}
+
+void AudioSystem::SetMasterVolume(float volume) {
+    if (!initialized)
+        return;
+
+    ma_engine_set_volume(&engine, volume);
+}
+
+float AudioSystem::GetMasterVolume() const {
+    if (!initialized)
+        return 0.0f;
+
+    return ma_engine_get_volume(const_cast<ma_engine*>(&engine));
 }
 
 } // namespace Tenshi
