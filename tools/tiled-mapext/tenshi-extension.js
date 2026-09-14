@@ -6,7 +6,7 @@ var tenshiMapFormat = {
 
     write: function(map, fileName) {
         if (map.infinite) {
-            return "Tenshi Tilemap does not support infinite maps";
+            return "Tenshi does not support infinite maps";
         }
 
         if (map.width <= 0 || map.height <= 0) {
@@ -46,10 +46,10 @@ var tenshiMapFormat = {
         // map name
         var mapName = map.property("tenshiName");
 
-        if (mapName === undefined ||
-            mapName === null ||
-            mapName === "") {
-
+        if (mapName === undefined 
+        ||  mapName === null 
+        ||  mapName === ""
+        ) {
             mapName = map.name;
         }
 
@@ -59,7 +59,6 @@ var tenshiMapFormat = {
         var layers = [];
 
         for (var layerIndex = 0; layerIndex < map.layerCount; ++layerIndex) {
-
             var layer = map.layerAt(layerIndex);
 
             if (!layer.isTileLayer)
@@ -85,10 +84,7 @@ var tenshiMapFormat = {
         // collider layer
         var collisionLayer = null;
 
-        for (var i = 0;
-             i < map.layerCount;
-             ++i) {
-
+        for (var i = 0; i < map.layerCount; ++i) {
             var candidate = map.layerAt(i);
 
             if (candidate.isTileLayer &&
@@ -104,24 +100,13 @@ var tenshiMapFormat = {
         if (collisionLayer) {
             for (var y = 0; y < height; ++y) {
                 for (var x = 0; x < width; ++x) {
-
                     var cell = collisionLayer.cellAt(x, y);
-
                     if (!cell || cell.tileId < 0)
                         continue;
 
-                    var collider = getTileProperty(
-                        collisionLayer,
-                        x,
-                        y,
-                        "tenshiCollider"
-                    );
+                    var collider = getTileProperty(collisionLayer, x, y, "tenshiCollider");
 
-                    collision[y * width + x] 
-                    = clampUInt8(
-                        collider,
-                        0
-                    );
+                    collision[y * width + x] = clampUInt8(collider, 0);
                 }
             }
         }
@@ -141,7 +126,6 @@ var tenshiMapFormat = {
 
             for (var y = 0; y < height; ++y) {
                 for (var x = 0; x < width; ++x) {
-
                     var cell = layer.cellAt(x, y);
                     var index = y * width + x;
 
@@ -152,7 +136,6 @@ var tenshiMapFormat = {
                     }
 
                     var tileId = cell.tileId;
-
                     if (tileId > 0xFFFE) {
                         return "ID of a tile exceeds intager range in layer '" 
                             +   layer.name 
@@ -160,40 +143,18 @@ var tenshiMapFormat = {
                     }
 
                     tiles[index] = tileId;
-                    var flags = getTileProperty(
-                        layer,
-                        x,
-                        y,
-                        "tenshiFlags"
-                    );
+                    var flags = getTileProperty(layer, x, y, "tenshiFlags");
 
-                    attributes[index] = clampUInt8(
-                        flags,
-                        0
-                    );
+                    attributes[index] = clampUInt8(flags, 0);
                 }
             }
 
-            outputLayers.push({
-                depth: i,
-                tiles: tiles,
-                attributes: attributes
-            });
+            outputLayers.push({depth: i, tiles: tiles, attributes: attributes});
         }
 
         // doors
-        var entries = collectTransitions(
-            map,
-            "Entries",
-            width,
-            height
-        );
-        var exits = collectTransitions(
-            map,
-            "Exits",
-            width,
-            height
-        );
+        var entries = collectTransitions(map, "Entries", width, height);
+        var exits = collectTransitions(map, "Exits", width, height);
 
         // build strings
         var stringData = [];
@@ -246,7 +207,7 @@ var tenshiMapFormat = {
         var layerHeaders = [];
 
         var currentDataOffset = dataOffset;
-
+        
         for (var i = 0; i < outputLayers.length; ++i) {
             var layer = outputLayers[i];
 
@@ -277,113 +238,29 @@ var tenshiMapFormat = {
         var bytes = new Uint8Array(output);
 
         // header
-        writeMagic(
-            bytes,
-            0,
-            "TMAP"
-        );
+        writeMagic(bytes, 0, "TMAP");
 
-        view.setUint16(
-            4,
-            1,
-            true
-        );
-
-        view.setUint16(
-            6,
-            width,
-            true
-        );
-
-        view.setUint16(
-            8,
-            height,
-            true
-        );
-
-        view.setUint16(
-            10,
-            outputLayers.length,
-            true
-        );
-
-        view.setUint16(
-            12,
-            entries.length,
-            true
-        );
-
-        view.setUint16(
-            14,
-            exits.length,
-            true
-        );
-
-        view.setUint32(
-            16,
-            stringsOffset +
-            mapNameOffset,
-            true
-        );
-
-        view.setUint32(
-            20,
-            mapNameBytes.length,
-            true
-        );
-
-        view.setUint32(
-            24,
-            stringsOffset +
-            tilesetNameOffset,
-            true
-        );
-
-        view.setUint32(
-            28,
-            tilesetNameBytes.length,
-            true
-        );
-
-        view.setUint32(
-            32,
-            entriesOffset,
-            true
-        );
-
-        view.setUint32(
-            36,
-            exitsOffset,
-            true
-        );
-
-        view.setUint32(
-            40,
-            layersOffset,
-            true
-        );
-
-        view.setUint32(
-            44,
-            collisionOffset,
-            true
-        );
+        view.setUint16(4,  1, true);
+        view.setUint16(6,  width, true);
+        view.setUint16(8,  height, true);
+        view.setUint16(10, outputLayers.length, true);
+        view.setUint16(12, entries.length, true);
+        view.setUint16(14, exits.length, true);
+        view.setUint32(16, stringsOffset + mapNameOffset, true);
+        view.setUint32(20, mapNameBytes.length, true);
+        view.setUint32(24, stringsOffset + tilesetNameOffset, true);
+        view.setUint32(28, tilesetNameBytes.length, true);
+        view.setUint32(32, entriesOffset, true);
+        view.setUint32(36, exitsOffset, true);
+        view.setUint32(40, layersOffset, true);
+        view.setUint32(44, collisionOffset, true);
 
         // entries
         var offset = entriesOffset;
 
         for (var i = 0; i < entries.length; ++i) {
-            view.setUint32(
-                offset,
-                entries[i].id,
-                true
-            );
-
-            view.setUint32(
-                offset + 4,
-                entries[i].tileIndex,
-                true
-            );
+            view.setUint32(offset, entries[i].id, true);
+            view.setUint32(offset + 4, entries[i].tileIndex, true);
 
             offset += TRANSITION_SIZE;
         }
@@ -392,17 +269,8 @@ var tenshiMapFormat = {
         offset = exitsOffset;
 
         for (var i = 0; i < exits.length; ++i) {
-            view.setUint32(
-                offset,
-                exits[i].id,
-                true
-            );
-
-            view.setUint32(
-                offset + 4,
-                exits[i].tileIndex,
-                true
-            );
+            view.setUint32(offset, exits[i].id, true);
+            view.setUint32(offset + 4, exits[i].tileIndex, true);
 
             offset += TRANSITION_SIZE;
         }
@@ -413,79 +281,35 @@ var tenshiMapFormat = {
         for (var i = 0; i < layerHeaders.length; ++i) {
             var layer = layerHeaders[i];
 
-            view.setInt16(
-                offset,
-                layer.depth,
-                true
-            );
+            view.setInt16(offset, layer.depth, true);
 
-            view.setUint32(
-                offset + 2,
-                layer.tileDataOffset,
-                true
-            );
+            view.setUint32(offset + 2, layer.tileDataOffset, true);
+            view.setUint32(offset + 6, layer.attributeDataOffset, true);
 
-            view.setUint32(
-                offset + 6,
-                layer.attributeDataOffset,
-                true
-            );
-
-            view.setUint32(
-                offset + 10,
-                layer.tileDataSize,
-                true
-            );
-
-            view.setUint32(
-                offset + 14,
-                layer.attributeDataSize,
-                true
-            );
+            view.setUint32(offset + 10, layer.tileDataSize, true);
+            view.setUint32(offset + 14, layer.attributeDataSize, true);
 
             offset += LAYER_SIZE;
         }
 
         // collider
-        bytes.set(
-            collision,
-            collisionOffset
-        );
+        bytes.set(collision, collisionOffset);
 
         // string
-        bytes.set(
-            new Uint8Array(mapNameBytes),
-            stringsOffset +
-            mapNameOffset
-        );
-
-        bytes.set(
-            new Uint8Array(tilesetNameBytes),
-            stringsOffset +
-            tilesetNameOffset
-        );
+        bytes.set(new Uint8Array(mapNameBytes), stringsOffset + mapNameOffset);
+        bytes.set(new Uint8Array(tilesetNameBytes), stringsOffset + tilesetNameOffset);
 
         // layer
         for (var i = 0; i < outputLayers.length; ++i) {
             var layer = outputLayers[i];
             var header = layerHeaders[i];
 
-            bytes.set(
-                new Uint8Array(layer.tiles.buffer),
-                header.tileDataOffset
-            );
-
-            bytes.set(
-                new Uint8Array(layer.attributes.buffer),
-                header.attributeDataOffset
-            );
+            bytes.set(new Uint8Array(layer.tiles.buffer), header.tileDataOffset);
+            bytes.set(new Uint8Array(layer.attributes.buffer), header.attributeDataOffset);
         }
 
         // write file
-        var file = new BinaryFile(
-            fileName,
-            BinaryFile.WriteOnly
-        );
+        var file = new BinaryFile(fileName, BinaryFile.WriteOnly);
 
         file.write(output);
         file.commit();
@@ -587,10 +411,7 @@ function getTileProperty(layer, x, y, propertyName) {
         return 0;
 
     var value = tile.property(propertyName);
-    if (value === undefined 
-    ||  value === null
-    ) {
-
+    if (value === undefined || value === null) {
         return 0;
     }
 
@@ -611,15 +432,8 @@ function collectTransitions(map, layerName, width, height) {
         for (var j = 0; j < layer.objectCount; ++j) {
             var object = layer.objectAt(j);
 
-            // objects are positioned in pixels
-            var x = Math.floor(
-                object.x 
-                /   map.tileWidth
-            );
-            var y = Math.floor(
-                object.y 
-                /   map.tileHeight
-            );
+            var x = Math.floor(object.x / map.tileWidth);
+            var y = Math.floor(object.y / map.tileHeight);
 
             // point outside the map is invalid
             if (x < 0 
@@ -627,20 +441,11 @@ function collectTransitions(map, layerName, width, height) {
             ||  x >= width 
             ||  y >= height
             ) {
-                tiled.warn(
-                    "Ignoring " 
-                +   layerName 
-                +   " object outside map: " 
-                +   object.name
-                );
-
+                tiled.warn("Ignoring " + layerName + " object outside map: " + object.name);
                 continue;
             }
 
-            result.push({
-                id: object.id >>> 0,
-                tileIndex: (y * width + x) >>> 0
-            });
+            result.push({id: object.id >>> 0, tileIndex: (y * width + x) >>> 0});
         }
     }
 
@@ -648,7 +453,4 @@ function collectTransitions(map, layerName, width, height) {
 }
 
 // register it with tiled
-tiled.registerMapFormat(
-    "tenshi-tmap",
-    tenshiMapFormat
-);
+tiled.registerMapFormat("tenshi-tmap", tenshiMapFormat);
