@@ -9,6 +9,8 @@
 #include "Window.h"
 #include "GameHelper.h"
 
+#include "CrashHandler.h"
+
 namespace Tenshi {
 
 #ifdef __EMSCRIPTEN__
@@ -41,6 +43,8 @@ bool Game::init(GameConfig conf) {
     config = conf;
 
     if (!INTERNAL::Initialize()) {
+        FatalError("Error!", "Initialization failed.");
+        
         return false;
     }
     

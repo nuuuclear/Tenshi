@@ -162,6 +162,7 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/Window.h"
         "${TENSHI_SOURCE_DIR}/GUI/Manager.cpp"
         "${TENSHI_SOURCE_DIR}/GUI/Frame.cpp"
+        "${TENSHI_SOURCE_DIR}/CrashHandler.h"
 )
 
 target_link_libraries(tenshi
