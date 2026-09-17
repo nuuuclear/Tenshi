@@ -48,7 +48,7 @@ public:
     // End the game loop
     void quit();
 
-    void reset(GameConfig conf);
+    void resetRenderer(GameConfig conf);
     void rendererSetFixedSize(int w, int h);
 
     void addSubroutine(std::unique_ptr<Subroutine> subroutine);

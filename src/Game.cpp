@@ -47,11 +47,6 @@ bool Game::init(GameConfig conf) {
         
         return false;
     }
-    
-    window = MakeWindow(conf);
-    if (!window) return false;
-
-    SDL_AddEventWatch(Game::eventWatch, this);
 
     const char* basePath = INTERNAL::getBasePath();
     std::filesystem::path root(basePath);
@@ -61,9 +56,16 @@ bool Game::init(GameConfig conf) {
     if (!filesys.mountPak("", "resource0.tpk")) {
         filesys.mountDirectory("", "resources");
     }
+
+    SDL_AddEventWatch(Game::eventWatch, this);
+
+    window = MakeWindow(conf);
+    if (!window) return false;
     
     renderer = SDL_CreateRenderer(window, NULL);
     SDL_SetRenderVSync(renderer, 1);
+
+    resetRenderer(conf);
 
     if (!audiosys.Init()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Audio engine failed to initialize");
@@ -191,12 +193,13 @@ void Game::pulse() {
     }
 }
 
-void Game::reset(GameConfig conf) {
+void Game::resetRenderer(GameConfig conf) {
     SDL_SetWindowSize(window, 
         conf.windowWidth  * conf.windowScale,
         conf.windowHeight * conf.windowScale
     );
-
+    
+    rendererSetFixedSize(conf.windowWidth, conf.windowHeight);
 }
 
 void Game::rendererSetFixedSize(int w, int h) {
