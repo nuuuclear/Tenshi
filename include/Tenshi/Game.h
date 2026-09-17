@@ -40,7 +40,7 @@ public:
     ~Game();
 
     // Initialize the game
-    bool init(GameConfig conf);
+    bool init();
 
     // Start the game loop
     void run();
@@ -55,6 +55,7 @@ public:
 
     FileSystem& getFileSystem();
     AudioSystem& getAudioSystem();
+    GameConfig& getConfig();
     SDL_Window* getWindow();
     SDL_Renderer* getRenderer();
 

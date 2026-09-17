@@ -31,3 +31,4 @@
 #include "Tenshi/TextureAtlas.h"
 #include "Tenshi/Tilemap.h"
 #include "Tenshi/Tileset.h"
+#include "Tenshi/Yaml.h"

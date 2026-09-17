@@ -76,6 +76,12 @@ add_subdirectory(
     lz4
 )
 
+add_library(fkyaml INTERFACE)
+target_include_directories(fkyaml 
+    INTERFACE 
+        "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/fkyaml/include/"
+)
+
 # ============================================================
 # Tenshi engine
 # ============================================================
@@ -124,6 +130,7 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Manager.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Object.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Colour.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Yaml.h"
 
         # Sources
         "${TENSHI_SOURCE_DIR}/Engine.cpp"
@@ -160,6 +167,7 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/GUI/Manager.cpp"
         "${TENSHI_SOURCE_DIR}/GUI/Frame.cpp"
         "${TENSHI_SOURCE_DIR}/CrashHandler.h"
+        "${TENSHI_SOURCE_DIR}/Yaml.cpp"
 )
 
 target_link_libraries(tenshi
@@ -169,6 +177,7 @@ target_link_libraries(tenshi
         SDL3_ttf::SDL3_ttf
         miniaudio
         lz4
+        fkyaml
 )
 
 target_include_directories(tenshi

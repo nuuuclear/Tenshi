@@ -1,15 +1,17 @@
 #include "Tenshi/Game.h"
 
+#include "Tenshi/Yaml.h"
+
+#include "Window.h"
+#include "GameHelper.h"
+#include "CrashHandler.h"
+
 #include <utility>
+#include <string>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
-
-#include "Window.h"
-#include "GameHelper.h"
-
-#include "CrashHandler.h"
 
 namespace Tenshi {
 
@@ -39,9 +41,7 @@ Game::~Game() {
     SDL_Quit();
 }
 
-bool Game::init(GameConfig conf) {
-    config = conf;
-
+bool Game::init() {
     if (!INTERNAL::Initialize()) {
         FatalError("Error!", "Initialization failed.");
         
@@ -57,15 +57,19 @@ bool Game::init(GameConfig conf) {
         filesys.mountDirectory("", "resources");
     }
 
+    YamlLoader yaml(filesys);
+    YamlDocument document = yaml.Load("game.yml");
+    INTERNAL::buildConfig(document, config);
+
     SDL_AddEventWatch(Game::eventWatch, this);
 
-    window = MakeWindow(conf);
+    window = MakeWindow(config);
     if (!window) return false;
     
     renderer = SDL_CreateRenderer(window, NULL);
     SDL_SetRenderVSync(renderer, 1);
 
-    resetRenderer(conf);
+    resetRenderer(config);
 
     if (!audiosys.Init()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Audio engine failed to initialize");
@@ -191,6 +195,10 @@ void Game::pulse() {
     if (redrawRequested) {
         draw();
     }
+}
+
+GameConfig& Game::getConfig() {
+    return config;
 }
 
 void Game::resetRenderer(GameConfig conf) {
