@@ -1,15 +1,11 @@
 #include "Tenshi/Player.h"
 
-#include <SDL3_image/SDL_image.h>
-
-#include <string>
-
 #include "Tenshi/Actor.h"
 
 namespace Tenshi {
 
 Player::Player() {
-	// SDL_Renderer* renderer = Angel_GetRenderer();
+
 }
 
 void Player::init() {
