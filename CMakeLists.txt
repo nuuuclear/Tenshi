@@ -307,10 +307,6 @@ if(TENSHI_PACKED)
         DEPENDS
             "${TENSHI_PAK_FILE}"
     )
-
-else()
-    # create the target anyway so all projects can depend on it
-    add_custom_target(pack_resources)
 endif()
 
 # ============================================================
