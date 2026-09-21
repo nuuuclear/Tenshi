@@ -11,8 +11,8 @@ Note: It's currently missing some features and is in early development!
 
 - SDL3
 - SDL_ttf
-- SDL_image
 - miniaudio
 - stb_vorbis
+- stb_image
 - lz4
 - fkyaml
