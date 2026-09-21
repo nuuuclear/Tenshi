@@ -82,6 +82,11 @@ target_include_directories(fkyaml
         "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/fkyaml/include/"
 )
 
+add_library(stb_image INTERFACE)
+target_include_directories(stb_image INTERFACE 
+    "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/stb_image/"
+)
+
 # ============================================================
 # Tenshi engine
 # ============================================================
@@ -94,7 +99,7 @@ add_library(tenshi::tenshi ALIAS tenshi)
 
 target_sources(tenshi
     PRIVATE
-        # Include
+        # Public includes
         "${TENSHI_INCLUDE_DIR}/Tenshi/Tenshi.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Engine.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Game.h"
@@ -132,7 +137,7 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Colour.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Yaml.h"
 
-        # Sources
+        # Private
         "${TENSHI_SOURCE_DIR}/Engine.cpp"
         "${TENSHI_SOURCE_DIR}/Game.cpp"
         "${TENSHI_SOURCE_DIR}/GameHelper.h"
@@ -168,16 +173,18 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/GUI/Frame.cpp"
         "${TENSHI_SOURCE_DIR}/CrashHandler.h"
         "${TENSHI_SOURCE_DIR}/Yaml.cpp"
+        "${TENSHI_SOURCE_DIR}/Image.cpp"
+        "${TENSHI_SOURCE_DIR}/Image.h"
 )
 
 target_link_libraries(tenshi
     PUBLIC
         SDL3::SDL3
-        SDL3_image::SDL3_image
         SDL3_ttf::SDL3_ttf
         miniaudio
         lz4
         fkyaml
+        stb_image
 )
 
 target_include_directories(tenshi

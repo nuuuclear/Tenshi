@@ -9,6 +9,8 @@
 #include "Tenshi/Font.h"
 #include "Tenshi/Sound.h"
 
+#include "Image.h"
+
 #include "PakFile.h"
 
 namespace Tenshi {
@@ -38,13 +40,12 @@ bool MakeSprite(
     SDL_IOStream* io = SDL_IOFromConstMem(data.data(), data.size());
     if (!io) return false; 
     
-    SDL_Texture* texture = IMG_LoadTexture_IO(renderer, io, true);
+    SDL_Texture* texture = LoadTextureIO_STB(renderer, io, true);
     if (!texture) {
         LogDebug(
             LogCategory::Resource,
-            "Failed to load sprite '{}': {}",
-            path,
-            SDL_GetError()
+            "Failed to load sprite '{}'",
+            path
         );
 
         return false;
