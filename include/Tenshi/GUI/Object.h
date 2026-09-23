@@ -71,12 +71,12 @@ public:
         return false;
     }
 
-    Vec2_f getGlobalPosition() const {
+    vec<float, 2> getGlobalPosition() const {
         if (parent) {
-            Vec2_f parentGlobal = parent->getGlobalPosition();
+            vec<float, 2> parentGlobal = parent->getGlobalPosition();
             return { parentGlobal.x + bounds.x, parentGlobal.y + bounds.y };
         }
-        return Vec2_f{bounds.x, bounds.y};
+        return vec<float, 2>{bounds.x, bounds.y};
     }
 
     void setActive(bool active) { active = active; }

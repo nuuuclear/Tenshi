@@ -4,27 +4,36 @@
 
 namespace Tenshi {
 
-struct Vec2_f {
-    float x = 0.0f;
-    float y = 0.0f;
+template <typename T, std::size_t Size>
+struct vec;
+
+// vec2
+template <typename T>
+struct vec<T, 2> {
+    T x, y;
 };
 
-struct Vec3_f {
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
+// vec3
+template <typename T>
+struct vec<T, 3> {
+    T x, y, z;
 };
 
-struct Vec2_i32 {
-    int32_t x = 0.0f;
-    int32_t y = 0.0f;
-};
 
-struct Vec3_i32 {
-    int32_t x = 0.0f;
-    int32_t y = 0.0f;
-    int32_t z = 0.0f;
-};
+// vec2
+template <typename T>
+vec(T, T) -> vec<T, 2>;
+
+// vec3
+template <typename T>
+vec(T, T, T) -> vec<T, 3>;
+
+template <typename T>
+vec(const vec<T, 2>&, T) -> vec<T, 3>;
+
+template <typename T>
+vec(T, const vec<T, 2>&) -> vec<T, 3>;
+
 
 } // namespace Tenshi
 
