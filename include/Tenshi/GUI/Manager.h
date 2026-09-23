@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Tenshi/Subroutine.h"
+#include "Tenshi/Core/Subroutine.h"
 #include "Tenshi/GUI/Object.h"
 
 #include <SDL3/SDL.h>

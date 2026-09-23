@@ -1,0 +1,39 @@
+#pragma once
+
+#include <SDL3/SDL.h>
+
+#include <string>
+
+#include "Tenshi/Assets/AssetManager.h"
+
+namespace Tenshi {
+
+class FileSystem;
+
+bool MakeSprite(
+    SDL_Renderer* renderer,
+    AssetManager& assets,
+    FileSystem& files,
+    const std::string& path,
+    const std::string& key,
+    int width,
+    int height
+);
+
+bool MakeFont(
+	AssetManager& assets, 
+	FileSystem& files,
+	const std::string path, 
+	const std::string key, 
+	float ptsize
+);
+
+bool MakeSound(
+    AssetManager& assets,
+    FileSystem& files,
+    AudioSystem& audio,
+    const std::string& path,
+    const std::string& key
+);
+
+} // namespace Tenshi
