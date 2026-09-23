@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 
 namespace Tenshi {
 
@@ -11,30 +12,18 @@ struct vec;
 template <typename T>
 struct vec<T, 2> {
     T x, y;
+
+    constexpr vec(T x, T y) : x(x), y(y) {} 
 };
 
 // vec3
 template <typename T>
 struct vec<T, 3> {
     T x, y, z;
+
+    constexpr vec(T x, T y, T z) : x(x), y(y), z(z) {}
+    constexpr vec(const vec<T, 2>& v, T z) : x(v.x), y(v.y), z(z) {}
+    constexpr vec(T x, const vec<T, 2>& v) : x(x), y(v.x), z(v.y) {}
 };
 
-
-// vec2
-template <typename T>
-vec(T, T) -> vec<T, 2>;
-
-// vec3
-template <typename T>
-vec(T, T, T) -> vec<T, 3>;
-
-template <typename T>
-vec(const vec<T, 2>&, T) -> vec<T, 3>;
-
-template <typename T>
-vec(T, const vec<T, 2>&) -> vec<T, 3>;
-
-
 } // namespace Tenshi
-
-
