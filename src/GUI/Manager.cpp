@@ -11,7 +11,7 @@ UIManager::UIManager(Game* game) : Subroutine(game) {
 UIManager::~UIManager() {
 }
 
-void UIManager::event(const SDL_Event& e) {
+void UIManager::event(const Event& e) {
     for (auto& child : children) {
         child->event(e);
     }

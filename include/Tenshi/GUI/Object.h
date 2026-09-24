@@ -2,6 +2,7 @@
 
 #include "Tenshi/Geometry/Vector.h"
 #include "Tenshi/Geometry/Rect.h"
+#include "Tenshi/Event/Event.h"
 
 #include <vector>
 #include <memory>
@@ -22,7 +23,7 @@ public:
 
     virtual ~Object() = default;
 
-    virtual bool event(const SDL_Event& event) {
+    virtual bool event(const Event& event) {
         if (!active) return false;
 
         for (auto it = children.rbegin(); it != children.rend(); ++it) {

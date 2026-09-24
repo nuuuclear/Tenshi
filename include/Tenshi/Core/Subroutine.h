@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL.h>
+#include "Tenshi/Event/Event.h"
 
 namespace Tenshi {
 class Game;
@@ -10,7 +10,7 @@ public:
     virtual ~Subroutine() = default;
 
     virtual bool init() { return true; }
-    virtual void event(const SDL_Event& event) {}
+    virtual void event(const Event& event) {}
     virtual void update(double deltaTime) {}
     virtual void draw() {}
 

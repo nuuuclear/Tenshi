@@ -8,6 +8,7 @@
 
 #include <utility>
 #include <string>
+#include <filesystem>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -25,26 +26,60 @@ void Game::emscriptenStep() {
 }
 #endif
 
-Game::Game() {
+Game::Game(std::unique_ptr<Platform> platform)
+    : platform(std::move(platform)) 
+{
 }
 
 Game::~Game() {
-    SDL_RemoveEventWatch(Game::eventWatch, this);
-
     subroutines.clear();
     audiosys.Shutdown();
 
-    TTF_DestroyRendererTextEngine(text_engine);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    if (text_engine) {
+        TTF_DestroyRendererTextEngine(text_engine);
+        text_engine = nullptr;
+    }
 
-    SDL_Quit();
+    if (renderer) {
+        SDL_DestroyRenderer(renderer);
+        renderer = nullptr;
+    }
+
+    if (window) {
+        SDL_DestroyWindow(window);
+        window = nullptr;
+    }
+
+    if (platform) {
+        platform->shutdown();
+    }
 }
 
 bool Game::init() {
+    if (!platform) {
+        FatalError(
+            "Error!",
+            "No platform backend was provided"
+        );
+
+        return false;
+    }
+
+    if (!platform->initialize()) {
+        FatalError(
+            "Error!",
+            "Platform initialization failed"
+        );
+
+        return false;
+    }
+
     if (!INTERNAL::Initialize()) {
-        FatalError("Error!", "Initialization failed.");
-        
+        FatalError(
+            "Error!",
+            "Initialization failed."
+        );
+
         return false;
     }
 
@@ -61,12 +96,12 @@ bool Game::init() {
     YamlDocument document = yaml.Load("game.yml");
     INTERNAL::buildConfig(document, config);
 
-    SDL_AddEventWatch(Game::eventWatch, this);
-
     window = MakeWindow(config);
     if (!window) return false;
-    
+
     renderer = SDL_CreateRenderer(window, NULL);
+    if (!renderer) return false;
+
     SDL_SetRenderVSync(renderer, 1);
 
     resetRenderer(config);
@@ -85,9 +120,9 @@ bool Game::init() {
 
     audiosys.SetMasterVolume(1.0f);
 
-    lastCounter = SDL_GetPerformanceCounter();
+    lastTime = platform->getTime();
     deltaTime = 0.0;
-    targetFrameTime = 1.0 / 60;
+    targetFrameTime = 1.0 / 60.0;
 
     running = true;
     return true;
@@ -124,51 +159,92 @@ void Game::addSubroutine(std::unique_ptr<Subroutine> subroutine) {
 }
 
 void Game::step() {
-    uint64_t currentCounter = SDL_GetPerformanceCounter();
+    const double currentTime = platform->getTime();
 
-    deltaTime
-    =   (double)(currentCounter - lastCounter) 
-    /   SDL_GetPerformanceFrequency();
+    deltaTime = currentTime - lastTime;
 
-    lastCounter = currentCounter;
+    lastTime = currentTime;
 
 #ifdef __EMSCRIPTEN__
     // emscripten frame limiting
     if (deltaTime < targetFrameTime) {
-        SDL_Delay((Uint32)((targetFrameTime - deltaTime) * 1000.0));
+        platform->delay(
+            static_cast<uint32_t>(
+                (targetFrameTime - deltaTime) * 1000.0
+            )
+        );
     }
 #endif
 
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-#ifdef __EMSCRIPTEN__
-        // browser audio must be started from a user interaction
-        // retrying wont do anything until the first event happens
-        audiosys.Start();
-#endif
-        switch (event.type) {
-        case SDL_EVENT_QUIT:
-            running = false;
-            break;
-        case SDL_EVENT_WINDOW_RESIZED:
-            emit("windowResize");
-            break;
-        }
+    input.beginFrame();
 
-        // signal all events
-        for (auto& subroutine : subroutines) {
-            subroutine->event(event);
+    platform->pollEvents(
+        [this](const Event& event) {
+            processEvent(event);
         }
-    }
+    );
 
     // signal all updates
     for (auto& subroutine : subroutines) {
         subroutine->update(deltaTime);
     }
-   
+
     draw();
 
     redrawRequested = false;
+}
+
+void Game::processEvent(const Event& event) {
+    switch (event.type) {
+        case EventType::Quit:
+            running = false;
+            break;
+
+        case EventType::WindowResize:
+            emit("windowResize");
+            break;
+
+        case EventType::WindowExposed:
+            redrawRequested = true;
+            break;
+
+        default:
+            break;
+    }
+
+    switch (event.type) {
+        case EventType::KeyDown:
+        case EventType::KeyUp:
+        case EventType::MouseButtonDown:
+        case EventType::MouseButtonUp:
+        case EventType::MouseMotion:
+        case EventType::MouseWheel:
+            input.process(event.input);
+            break;
+
+        default:
+            break;
+    }
+
+#ifdef __EMSCRIPTEN__
+    // try to start audio in browser
+    switch (event.type) {
+        case EventType::KeyDown:
+        case EventType::MouseButtonDown:
+        case EventType::MouseMotion:
+        case EventType::MouseWheel:
+            audiosys.Start();
+            break;
+
+        default:
+            break;
+    }
+#endif
+
+    // signal all events
+    for (auto& subroutine : subroutines) {
+        subroutine->event(event);
+    }
 }
 
 void Game::draw() {
@@ -194,6 +270,8 @@ void Game::draw() {
 void Game::pulse() {
     if (redrawRequested) {
         draw();
+
+        redrawRequested = false;
     }
 }
 
@@ -201,29 +279,21 @@ GameConfig& Game::getConfig() {
     return config;
 }
 
+Input& Game::getInput() {
+    return input;
+}
+
 void Game::resetRenderer(GameConfig conf) {
-    SDL_SetWindowSize(window, 
+    SDL_SetWindowSize(window,
         conf.windowWidth  * conf.windowScale,
         conf.windowHeight * conf.windowScale
     );
-    
+
     rendererSetFixedSize(conf.windowWidth, conf.windowHeight);
 }
 
 void Game::rendererSetFixedSize(int w, int h) {
-	SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
-}
-
-bool SDLCALL Game::eventWatch(void* userdata, SDL_Event* event) {
-    Game* game = static_cast<Game*>(userdata);
-
-    if (event->type == SDL_EVENT_WINDOW_EXPOSED) {
-        game->redrawRequested = true;
-    }
-
-    game->pulse();
-
-    return true;
+    SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
 }
 
 FileSystem& Game::getFileSystem() {
