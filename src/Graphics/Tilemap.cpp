@@ -4,6 +4,8 @@
 #include "Tenshi/Graphics/Sprite.h"
 #include "Tenshi/Graphics/SpriteBatch.h"
 #include "Tenshi/Graphics/Tileset.h"
+#include "Tenshi/Files/FileSystem.h"
+
 #include "Graphics/TilemapFormat.h"
 
 #include <algorithm>
@@ -12,32 +14,6 @@
 
 namespace Tenshi {
 namespace {
-
-bool ReadFile(const char* path, std::vector<uint8_t>& output) {
-    if (path == nullptr)
-        return false;
-
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file) return false;
-
-    const std::streamsize size = file.tellg();
-
-    if (size < 0)
-        return false;
-
-    file.seekg(0, std::ios::beg);
-
-    output.resize(static_cast<size_t>(size));
-
-    if (size > 0) {
-        if (!file.read(reinterpret_cast<char*>(output.data()), size)) {
-            output.clear();
-            return false;
-        }
-    }
-
-    return true;
-}
 
 bool RangeValid(size_t fileSize, uint32_t offset, uint32_t size) {
     const size_t start = static_cast<size_t>(offset);
@@ -161,10 +137,10 @@ Tilemap::Tilemap(SDL_Renderer* renderer,int width, int height)
 }
 
 Tilemap::~Tilemap() = default;
-bool Tilemap::Load(const char* path) {
-    std::vector<uint8_t> data;
+bool Tilemap::Load(FileSystem& files, const std::string& path) {
+    std::vector<uint8_t> data = files.readAll(path);
 
-    if (!ReadFile(path, data))
+    if (data.empty())
         return false;
 
     if (data.size() < sizeof(TMapHeader))

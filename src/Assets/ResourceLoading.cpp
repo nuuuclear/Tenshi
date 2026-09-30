@@ -14,8 +14,6 @@
 #include "Files/PakFile.h"
 
 namespace Tenshi {
-    
-// this only has factories, probs should move these elsewhere...
 
 // Create a new sprite and put it into an AssetManager
 bool MakeSprite(

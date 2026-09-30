@@ -12,6 +12,7 @@
 namespace Tenshi {
 
 class Camera;
+class FileSystem;
 class SpriteBatch;
 class Tileset;
 using TileFlags = uint8_t;
@@ -56,7 +57,7 @@ public:
     Tilemap(SDL_Renderer* renderer, int width, int height);
     ~Tilemap();
 
-    bool Load(const char* path);
+    bool Load(FileSystem& files, const std::string& path);
 
     void Step(double deltaTime);
     void Draw(const Camera& camera);
