@@ -15,8 +15,16 @@ namespace Tenshi {
 class DirectoryFile : public File {
 public:
     explicit DirectoryFile(const fs::path& path)
-        : file(path, std::ios::binary) 
+        : file(path, std::ios::binary), fileSize(-1)
     {
+        if (file) {
+            std::error_code error;
+            auto size = fs::file_size(path, error);
+
+            if (!error && size <= static_cast<uintmax_t>(std::numeric_limits<int64_t>::max())) {
+                fileSize = static_cast<int64_t>(size);
+            }
+        }
     }
 
     bool isOpen() const {
@@ -27,6 +35,11 @@ public:
     size_t read(void* buffer, size_t size) override {
         if (!file || !buffer || size == 0) {
             return 0;
+        }
+
+        const size_t maxStreamSize = static_cast<size_t>(std::numeric_limits<std::streamsize>::max());
+        if (size > maxStreamSize) {
+            size = maxStreamSize;
         }
 
         file.read(
@@ -82,31 +95,12 @@ public:
     }
 
     int64_t size() const override {
-        if (!file) {
-            return -1;
-        }
-
-        auto current = file.tellg();
-
-        if (current == std::streampos(-1)) {
-            return -1;
-        }
-
-        file.seekg(0, std::ios::end);
-
-        auto end = file.tellg();
-
-        file.seekg(current);
-
-        if (end == std::streampos(-1)) {
-            return -1;
-        }
-
-        return static_cast<int64_t>(end);
+        return fileSize;
     }
 
 private:
     mutable std::ifstream file;
+    int64_t fileSize;
 };
 
 struct FileSystem::Mount {
@@ -144,8 +138,9 @@ bool FileSystem::mountDirectory(
 
     physicalPath = fs::absolute(physicalPath).lexically_normal();
 
-    if (!fs::exists(physicalPath) ||
-        !fs::is_directory(physicalPath)) {
+    if (!fs::exists(physicalPath) 
+    ||  !fs::is_directory(physicalPath)
+    ) {
         return false;
     }
 
@@ -211,8 +206,11 @@ std::string FileSystem::normalizePath(const std::string& path) const {
         result = result.substr(6);
     }
 
-    while (!result.empty() && result.front() == '/') {
-        result.erase(result.begin());
+    const size_t firstNonSlash = result.find_first_not_of('/');
+    if (firstNonSlash == std::string::npos) {
+        result.clear();
+    } else if (firstNonSlash > 0) {
+        result.erase(0, firstNonSlash);
     }
 
     fs::path normalized = fs::path(result).lexically_normal();
@@ -255,7 +253,41 @@ bool FileSystem::isWithinRoot(const std::string& path) const {
 }
 
 bool FileSystem::exists(const std::string& path) const {
-    return open(path) != nullptr;
+    std::string normalized = normalizePath(path);
+
+    for (const auto& mount : mounts) {
+        std::string relative = normalized;
+
+        if (!mount->virtualPath.empty()) {
+            if (relative == mount->virtualPath) {
+                relative.clear();
+            } else {
+                std::string prefix = mount->virtualPath + "/";
+
+                if (relative.rfind(prefix, 0) != 0) {
+                    continue;
+                }
+
+                relative = relative.substr(prefix.size());
+            }
+        }
+
+        if (mount->type == Mount::Type::Pak) {
+            if (mount->pak->contains(relative)) {
+                return true;
+            }
+            continue;
+        }
+
+        fs::path physical = fs::path(mount->directory) / relative;
+        physical = fs::absolute(physical).lexically_normal();
+
+        if (isWithinRoot(physical.string()) && fs::is_regular_file(physical)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 std::unique_ptr<File> FileSystem::open(const std::string& path) const {
@@ -275,14 +307,14 @@ std::unique_ptr<File> FileSystem::open(const std::string& path) const {
                     continue;
                 }
 
-                relative =
-                    relative.substr(prefix.size());
+                relative = relative.substr(prefix.size());
             }
         }
 
         if (mount->type == Mount::Type::Pak) {
-            if (mount->pak->contains(relative)) {
-                return mount->pak->open(relative);
+            auto file = mount->pak->open(relative);
+            if (file) {
+                return file;
             }
         } else {
             fs::path physical = fs::path(mount->directory) / relative;
@@ -293,8 +325,9 @@ std::unique_ptr<File> FileSystem::open(const std::string& path) const {
                 continue;
             }
 
-            if (!fs::exists(physical) ||
-                !fs::is_regular_file(physical)) {
+            if (!fs::exists(physical) 
+            ||  !fs::is_regular_file(physical)
+            ) {
                 continue;
             }
 
@@ -313,13 +346,73 @@ std::vector<uint8_t> FileSystem::readAll(const std::string& path) const {
     auto file = open(path);
     if (!file) return {};
     
-    int64_t fileSize = file->size();
+    const int64_t fileSize = file->size();
     if (fileSize <= 0) return {};
 
     std::vector<uint8_t> data(static_cast<size_t>(fileSize));
     if (!file->readAll(data)) return {};
 
     return data;
+}
+
+std::vector<std::string> FileSystem::listFiles(const std::string& path) const {
+    const std::string normalized = normalizePath(path);
+
+    for (const auto& mount : mounts) {
+        std::string relative = normalized;
+
+        if (!mount->virtualPath.empty()) {
+            if (relative == mount->virtualPath) {
+                relative.clear();
+            } else {
+                const std::string prefix = mount->virtualPath + "/";
+                if (relative.rfind(prefix, 0) != 0) {
+                    continue;
+                }
+                relative = relative.substr(prefix.size());
+            }
+        }
+
+        if (mount->type == Mount::Type::Pak) {
+            auto files = mount->pak->listFiles(relative);
+            for (auto& file : files) {
+                if (!mount->virtualPath.empty()) {
+                    file = mount->virtualPath + "/" + file;
+                }
+            }
+            return files;
+        }
+
+        const fs::path physical = fs::path(mount->directory) / relative;
+        std::error_code error;
+        if (!isWithinRoot(fs::absolute(physical).lexically_normal().string())
+        ||  !fs::is_directory(physical, error)) {
+            continue;
+        }
+
+        std::vector<std::string> files;
+        for (const auto& entry : fs::directory_iterator(physical, error)) {
+            if (error) {
+                return {};
+            }
+            if (!entry.is_regular_file(error)) {
+                continue;
+            }
+
+            std::string file = entry.path().filename().generic_string();
+            if (!mount->virtualPath.empty()) {
+                file = mount->virtualPath + "/" + relative + "/" + file;
+            } else if (!relative.empty()) {
+                file = relative + "/" + file;
+            }
+            files.push_back(std::move(file));
+        }
+
+        std::sort(files.begin(), files.end());
+        return files;
+    }
+
+    return {};
 }
 
 std::string FileSystem::resolve(const std::string& path) const {
@@ -343,7 +436,7 @@ std::string FileSystem::resolve(const std::string& path) const {
 
             physical = fs::absolute(physical).lexically_normal();
 
-            if (fs::exists(physical)) {
+            if (isWithinRoot(physical.string()) && fs::exists(physical)) {
                 return physical.string();
             }
         }
@@ -353,9 +446,8 @@ std::string FileSystem::resolve(const std::string& path) const {
 }
 
 bool File::readAll(std::vector<uint8_t>& output) {
-    if (size() < 0) return false;
-    
-    int64_t fileSize = size();
+    const int64_t fileSize = size();
+    if (fileSize < 0) return false;
 
     output.resize(static_cast<size_t>(fileSize));
 

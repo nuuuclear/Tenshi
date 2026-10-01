@@ -76,8 +76,11 @@ std::string PakArchive::normalizePath(const std::string& path) const {
         result = result.substr(6);
     }
 
-    while (!result.empty() && result.front() == '/') {
-        result.erase(result.begin());
+    const size_t firstNonSlash = result.find_first_not_of('/');
+    if (firstNonSlash == std::string::npos) {
+        result.clear();
+    } else if (firstNonSlash > 0) {
+        result.erase(0, firstNonSlash);
     }
 
     std::filesystem::path p = std::filesystem::path(result).lexically_normal();
@@ -198,6 +201,26 @@ std::unique_ptr<File> PakArchive::open(const std::string& path) const {
         return nullptr;
     
     return std::make_unique<PakFile>(data);
+}
+
+std::vector<std::string> PakArchive::listFiles(const std::string& path) const {
+    const std::string normalized = normalizePath(path);
+    const std::string prefix = normalized.empty() ? std::string() : normalized + "/";
+    std::vector<std::string> result;
+
+    for (const auto& [entryPath, entry] : entries) {
+        if (entryPath.rfind(prefix, 0) != 0) {
+            continue;
+        }
+
+        const std::string remainder = entryPath.substr(prefix.size());
+        if (!remainder.empty() && remainder.find('/') == std::string::npos) {
+            result.push_back(entryPath);
+        }
+    }
+
+    std::sort(result.begin(), result.end());
+    return result;
 }
 
 bool PakArchive::readEntryData(const Entry& entry, std::vector<uint8_t>& output) const {

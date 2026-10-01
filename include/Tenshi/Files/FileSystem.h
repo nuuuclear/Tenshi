@@ -50,6 +50,9 @@ public:
     // Read all data from a file using it's path
     std::vector<uint8_t> readAll(const std::string& path) const;
 
+    // List files directly inside a virtual directory
+    std::vector<std::string> listFiles(const std::string& path) const;
+
     // Resolve a path from the filesystem
     std::string resolve(const std::string& path) const;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Tenshi/Assets/AssetLoading.h"
 #include "Tenshi/Assets/AssetRegistry.h"
 #include "Tenshi/Assets/Font.h"
 #include "Tenshi/Assets/ResourceLoading.h"

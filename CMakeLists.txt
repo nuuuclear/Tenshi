@@ -102,6 +102,7 @@ target_sources(tenshi
         # Public includes
         "${TENSHI_INCLUDE_DIR}/Tenshi/Tenshi.h"
         
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Assets/AssetLoading.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Assets/AssetManager.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Assets/AssetRegistry.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Assets/Font.h"
@@ -142,6 +143,7 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Utility/Colour.h"
 
         # Private
+        "${TENSHI_SOURCE_DIR}/Assets/AssetLoading.cpp"
         "${TENSHI_SOURCE_DIR}/Assets/Font.cpp"
         "${TENSHI_SOURCE_DIR}/Assets/Image.cpp"
         "${TENSHI_SOURCE_DIR}/Assets/Image.h"

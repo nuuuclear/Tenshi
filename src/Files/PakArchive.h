@@ -17,6 +17,7 @@ public:
     bool load(const std::string& path);
     bool contains(const std::string& path) const;
     std::unique_ptr<File> open(const std::string& path) const;
+    std::vector<std::string> listFiles(const std::string& path) const;
 
     uint64_t fileCount() const;
     void printFiles() const;
