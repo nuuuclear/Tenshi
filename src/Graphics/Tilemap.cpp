@@ -36,6 +36,16 @@ const char* GetString(const std::vector<uint8_t>& data, uint32_t offset, uint32_
     return reinterpret_cast<const char*>(data.data() + offset);
 }
 
+SDL_FRect MakeRect(int x, int y, int w, int h) {
+    SDL_FRect rect;
+    rect.x = static_cast<float>(x);
+    rect.y = static_cast<float>(y);
+    rect.w = static_cast<float>(w);
+    rect.h = static_cast<float>(h);
+
+    return rect;
+}
+
 } // namespace
 
 MapLayer::MapLayer(int width, int height)
@@ -166,9 +176,9 @@ bool Tilemap::Load(FileSystem& files, const std::string& path) {
     if (header->layerCount == 0)
         return false;
 
-    const size_t transitionEntrySize = static_cast<size_t>(
-        header->entryCount
-    ) * sizeof(TMapTransition);
+    const size_t transitionEntrySize 
+    =   static_cast<size_t>(header->entryCount) 
+    *   sizeof(TMapTransition);
 
     if (!RangeValid(
             data.size(),
@@ -218,7 +228,8 @@ bool Tilemap::Load(FileSystem& files, const std::string& path) {
     );
 
     if (!mapNameData 
-    ||  !tilesetNameData) {
+    ||  !tilesetNameData
+    ) {
         return false;
     }
 
@@ -232,50 +243,44 @@ bool Tilemap::Load(FileSystem& files, const std::string& path) {
 
     if (!entries.empty()) {
         std::memcpy(
-            entries.data(),
-            data.data() 
-            +   header->entriesOffset,
-            entries.size() 
-            *   sizeof(TMapTransition)
+            entries.data(), 
+            data.data() + header->entriesOffset,
+            entries.size() * sizeof(TMapTransition)
         );
     }
 
-    exits.resize(
-        header->exitCount
-    );
+    exits.resize(header->exitCount);
 
     if (!exits.empty()) {
         std::memcpy(
             exits.data(),
-            data.data() 
-            +   header->exitsOffset,
-            exits.size() 
-            *   sizeof(TMapTransition)
+            data.data() + header->exitsOffset,
+            exits.size() * sizeof(TMapTransition)
         );
     }
 
     const size_t tileCount = static_cast<size_t>(width) * height;
 
     if (!RangeValid(
-        data.size(),
-        header->collisionOffset,
-        static_cast<uint32_t>(tileCount)
-    )) {
+            data.size(),
+            header->collisionOffset,
+            static_cast<uint32_t>(tileCount)
+        )
+    ) {
         return false;
     }
 
     collision.resize(tileCount);
 
     std::memcpy(
-        collision.data(),
-        data.data() 
-        +   header->collisionOffset,
+        collision.data(), 
+        data.data() + header->collisionOffset, 
         tileCount
     );
 
-    const auto* layerHeaders = reinterpret_cast<const TMapLayer*>(
-        data.data() 
-        +   header->layersOffset
+    const auto* layerHeaders 
+    =   reinterpret_cast<const TMapLayer*>(
+        data.data() + header->layersOffset
     );
 
     layers.clear();
@@ -292,13 +297,15 @@ bool Tilemap::Load(FileSystem& files, const std::string& path) {
     for (uint16_t i = 0; i < header->layerCount; ++i) {
         const TMapLayer& fileLayer = layerHeaders[i];
 
-        if (fileLayer.tileDataSize !=
-            expectedTileBytes) {
+        if (fileLayer.tileDataSize 
+        !=  expectedTileBytes
+        ) {
             return false;
         }
 
-        if (fileLayer.attributeDataSize !=
-            expectedAttributeBytes) {
+        if (fileLayer.attributeDataSize 
+        !=  expectedAttributeBytes
+        ) {
             return false;
         }
 
@@ -325,15 +332,13 @@ bool Tilemap::Load(FileSystem& files, const std::string& path) {
 
         std::memcpy(
             layer.GetTiles().data(),
-            data.data() 
-            +   fileLayer.tileDataOffset,
+            data.data() + fileLayer.tileDataOffset,
             fileLayer.tileDataSize
         );
 
         std::memcpy(
             layer.GetAttributes().data(),
-            data.data() 
-            +   fileLayer.attributeDataOffset,
+            data.data() + fileLayer.attributeDataOffset,
             fileLayer.attributeDataSize
         );
 
@@ -400,20 +405,19 @@ void Tilemap::Draw(const Camera& camera) {
                 const TilesetTile* tile = tileset->GetTile(tileId);
                 if (!tile) continue;
 
-                SDL_FRect source;
+                SDL_FRect source = MakeRect(
+                    tile->x * tileWidth,
+                    tile->y * tileHeight,
+                    tileWidth,
+                    tileHeight
+                );
 
-                source.x = static_cast<float>(tile->x * tileWidth);
-                source.y = static_cast<float>(tile->y * tileHeight);
-
-                source.w = static_cast<float>(tileWidth);
-                source.h = static_cast<float>(tileHeight);
-
-                SDL_FRect destination;
-
-                destination.x = static_cast<float>(x * tileWidth - camX);
-                destination.y = static_cast<float>(y * tileHeight - camY);
-                destination.w = static_cast<float>(tileWidth);
-                destination.h = static_cast<float>(tileHeight);
+                SDL_FRect destination = MakeRect(
+                    x * tileWidth - camX,
+                    y * tileHeight - camY,
+                    tileWidth,
+                    tileHeight
+                );
 
                 batch->draw(
                     sprite->GetTexture(),
