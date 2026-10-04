@@ -93,7 +93,38 @@ public:
             }
         }
     }
+public:
+    double getDeltaTime() const { 
+        return deltaTime; 
+    }
 
+    uint32_t getDeltaTimeMs() const { 
+        return static_cast<uint32_t>(deltaTime * 1000.0); 
+    }
+
+    uint32_t countFPS() const {
+        uint32_t now;
+        static bool first = true;
+        static uint32_t max_count;
+        static uint32_t count;
+        static uint32_t wait;
+
+        if (first) {
+            wait = platform->getTicks();
+            first = false;
+        }
+
+        now = platform->getTicks();
+        count++;
+
+        if (wait + 1000 <= now) {
+            wait += 1000;
+            max_count = count;
+            count = 0;
+        }
+
+        return max_count;
+    }
 private:
     void step();
     void draw();

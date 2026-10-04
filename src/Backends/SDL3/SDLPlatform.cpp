@@ -1,6 +1,9 @@
 #include "SDLPlatform.h"
 
 #include <SDL3/SDL.h>
+#include <cstdint>
+
+#include "Tenshi/Core/Log.h"
 
 namespace Tenshi {
 
@@ -9,6 +12,8 @@ SDLPlatform::~SDLPlatform() {
 }
 
 bool SDLPlatform::initialize() {
+    SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "1");
+
     if (!SDL_Init(
         SDL_INIT_VIDEO 
     |   SDL_INIT_AUDIO
@@ -24,7 +29,7 @@ bool SDLPlatform::initialize() {
 
 void SDLPlatform::shutdown() {
     SDL_RemoveEventWatch(SDLPlatform::eventWatch, this);
-
+    
     SDL_Quit();
 }
 
@@ -301,6 +306,23 @@ MouseButton SDLPlatform::translateMouseButton(uint8_t button) const {
 double SDLPlatform::getTime() const {
     return  static_cast<double>(SDL_GetPerformanceCounter()) 
         /   static_cast<double>(SDL_GetPerformanceFrequency());
+}
+
+uint64_t SDLPlatform::getTicks() const {
+    return SDL_GetTicks();
+}
+
+const char* SDLPlatform::getBasePath() const {
+    const char* basePath = SDL_GetBasePath();
+
+    if (!basePath) {
+        LogError(
+            LogCategory::Application,
+            "Could not determine application path"
+        );
+    }
+
+    return basePath;
 }
 
 } // namespace Tenshi

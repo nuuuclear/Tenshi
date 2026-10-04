@@ -17,11 +17,12 @@ public:
     void shutdown() override;
 
     double getTime() const override;
+    uint64_t getTicks() const override;
 
     void delay(uint32_t milliseconds) override;
-
     void pollEvents(const EventCallback& callback) override;
 
+    const char* getBasePath() const;
 private:
     bool translateEvent(const SDL_Event& source, Event& output) const;
 

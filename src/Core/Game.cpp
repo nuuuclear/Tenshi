@@ -74,16 +74,12 @@ bool Game::init() {
         return false;
     }
 
-    if (!INTERNAL::Initialize()) {
-        FatalError(
-            "Error!",
-            "Initialization failed."
-        );
-
+    if (!TTF_Init()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF failed to init: %s", SDL_GetError());
         return false;
     }
 
-    const char* basePath = INTERNAL::getBasePath();
+    const char* basePath = platform->getBasePath();
     std::filesystem::path root(basePath);
     filesys.setRoot(root.string());
 

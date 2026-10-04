@@ -18,9 +18,12 @@ public:
     virtual void shutdown() = 0;
 
     virtual double getTime() const = 0;
+    virtual uint64_t getTicks() const = 0;
 
     virtual void delay(uint32_t milliseconds) = 0;
     virtual void pollEvents(const EventCallback& callback) = 0;
+
+    virtual const char* getBasePath() const = 0;
 };
 
 std::unique_ptr<Platform> CreatePlatform();

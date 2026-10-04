@@ -6,7 +6,6 @@
 #include "Tenshi/Assets/ResourceLoading.h"
 #include "Tenshi/Audio/Audio.h"
 #include "Tenshi/Audio/Sound.h"
-#include "Tenshi/Core/Engine.h"
 #include "Tenshi/Core/Game.h"
 #include "Tenshi/Core/Log.h"
 #include "Tenshi/Core/Subroutine.h"
