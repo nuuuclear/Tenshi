@@ -87,6 +87,11 @@ target_include_directories(stb_image INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/stb_image/"
 )
 
+add_library(stb_truetype INTERFACE)
+target_include_directories(stb_truetype INTERFACE 
+    "${CMAKE_CURRENT_SOURCE_DIR}/${EXTERNAL_DIR}/stb_truetype/"
+)
+
 # ============================================================
 # Tenshi engine
 # ============================================================
