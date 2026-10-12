@@ -118,6 +118,9 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Core/Game.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Core/Log.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Core/Subroutine.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Entity/ComponentPool.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Entity/Entity.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Entity/World.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Files/FileSystem.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Files/Yaml.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Geometry/Rect.h"
@@ -141,7 +144,6 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Camera.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/CharacterModel.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Collider.h"
-        "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Entity.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Player.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Scene.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Utility/Colour.h"
@@ -161,6 +163,7 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/Core/Game.cpp"
         "${TENSHI_SOURCE_DIR}/Core/GameHelper.h"
         "${TENSHI_SOURCE_DIR}/Core/Log.cpp"
+        "${TENSHI_SOURCE_DIR}/Entity/World.cpp"
         "${TENSHI_SOURCE_DIR}/Files/FileSystem.cpp"
         "${TENSHI_SOURCE_DIR}/Files/PakArchive.cpp"
         "${TENSHI_SOURCE_DIR}/Files/PakArchive.h"
@@ -177,14 +180,13 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/GUI/Frame.cpp"
         "${TENSHI_SOURCE_DIR}/GUI/Manager.cpp"
         "${TENSHI_SOURCE_DIR}/Input/Input.cpp"
+        "${TENSHI_SOURCE_DIR}/Platform/Platform.cpp"
         "${TENSHI_SOURCE_DIR}/Platform/Window.cpp"
         "${TENSHI_SOURCE_DIR}/Platform/Window.h"
-        "${TENSHI_SOURCE_DIR}/Platform/Platform.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/Actor.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/Background.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/Camera.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/CharacterModel.cpp"
-        "${TENSHI_SOURCE_DIR}/Scene/Entity.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/Player.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/Scene.cpp"
 )
@@ -206,6 +208,21 @@ target_include_directories(tenshi
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
+
+# TODO: Add more tests
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(tenshi_ecs_tests
+        tests/ecs_tests.cpp
+    )
+    target_compile_features(tenshi_ecs_tests PRIVATE cxx_std_20)
+    target_include_directories(tenshi_ecs_tests
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    )
+    target_link_libraries(tenshi_ecs_tests PRIVATE tenshi::tenshi)
+    add_test(NAME tenshi_ecs_tests COMMAND tenshi_ecs_tests)
+endif()
 
 # ============================================================
 # Resource packer
