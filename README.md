@@ -12,7 +12,6 @@ Note: It's currently missing some features and is in early development!
 - Tenshi: MIT, see [LICENSE.md](./LICENSE.md)
 - stb: MIT, Public Domain
 - SDL: Zlib
-- SDL_ttf: Zlib
 - Miniaudio: MIT-0 (No Attribution), Public Domain
 - fkYAML: MIT
 - lz4: BSD 2-Clause

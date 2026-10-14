@@ -12,7 +12,6 @@
 #include <cstdint>
 
 #include <SDL3/SDL.h>
-#include <SDL3_ttf/SDL_ttf.h>
 
 #include "Tenshi/Input/Input.h"
 #include "Tenshi/Platform/Platform.h"
@@ -144,8 +143,6 @@ private:
     SDL_Renderer* renderer = nullptr;
     SDL_Surface* applicationSurface = nullptr;
     GameConfig config;
-
-    TTF_TextEngine* text_engine = nullptr; // migrate to ui system when implemented!
 
     FileSystem filesys;
     AudioSystem audiosys;

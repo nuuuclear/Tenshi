@@ -66,22 +66,15 @@ bool MakeFont(
 	auto data = files.readAll(path);
     if (data.empty()) return false;
 
-    SDL_IOStream* io = SDL_IOFromConstMem(data.data(), data.size());
-	if (!io) return false;
-
-	TTF_Font* fontdata = TTF_OpenFontIO(io, true, ptsize);
-	if (fontdata == NULL) {
+	auto font = std::make_unique<Font>();
+	if (!font->LoadFromMemory(std::move(data), ptsize)) {
 		LogDebug(
 			LogCategory::Application,
-			"Failed to open font: {}",
-			SDL_GetError()
+			"Failed to load font: {}",
+			path
 		);
-
 		return false;
 	}
-
-	auto font = std::make_unique<Font>();
-	font->Load_FromTTF(fontdata, std::move(data));
 
 	assets.font.Add(key, std::move(font));
 

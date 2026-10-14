@@ -206,11 +206,11 @@ target_sources(tenshi
 target_link_libraries(tenshi
     PUBLIC
         SDL3::SDL3
-        SDL3_ttf::SDL3_ttf
         miniaudio
         lz4
         fkyaml
         stb_image
+        stb_truetype
 )
 
 target_include_directories(tenshi

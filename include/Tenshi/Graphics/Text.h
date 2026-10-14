@@ -2,9 +2,6 @@
 
 #include <SDL3/SDL.h>
 
-#include <SDL3_ttf/SDL_ttf.h>
-#include <SDL3_ttf/SDL_textengine.h>
-
 #include <string>
 #include <memory>
 
@@ -24,6 +21,7 @@ public:
 	void SetPosition(float x, float y);
 
 	void SetColour(SDL_Color col);
+	void SetAntialiasing(bool enabled);
 	void SetFont(Font* f);
 	void SetRenderer(SDL_Renderer* r);
 
@@ -45,6 +43,8 @@ private:
 	
 	float x;
 	float y;
+	float textureOffsetX = 0.0f;
+	bool antialiased = false;
 
 	bool dirty = true;
 };

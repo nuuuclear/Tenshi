@@ -36,11 +36,6 @@ Game::~Game() {
     subroutines.clear();
     audiosys.Shutdown();
 
-    if (text_engine) {
-        TTF_DestroyRendererTextEngine(text_engine);
-        text_engine = nullptr;
-    }
-
     if (renderer) {
         SDL_DestroyRenderer(renderer);
         renderer = nullptr;
@@ -72,11 +67,6 @@ bool Game::init() {
             "Platform initialization failed"
         );
 
-        return false;
-    }
-
-    if (!TTF_Init()) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF failed to init: %s", SDL_GetError());
         return false;
     }
 
