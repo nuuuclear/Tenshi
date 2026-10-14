@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Tenshi/Entity/World.h"
+#include "Tenshi/Scene/Components.h"
 
 namespace {
 struct Position {
@@ -265,6 +266,37 @@ void testWorldMove() {
     );
 }
 
+void testGameplayComposition() {
+    Tenshi::World world;
+    const Tenshi::Entity player = world.create();
+
+    world.emplace<Tenshi::Transform>(player, 10.0, 20.0);
+    world.emplace<Tenshi::Velocity>(player);
+    world.emplace<Tenshi::CharacterController>(player);
+    world.emplace<Tenshi::CharacterCollider>(player);
+    world.emplace<Tenshi::PlayerControlled>(player);
+
+    world.addSystem("controller", [](Tenshi::World& owner, float) {
+        owner.each<Tenshi::CharacterController, Tenshi::Velocity>(
+            [](Tenshi::Entity, Tenshi::CharacterController& controller,
+                Tenshi::Velocity& velocity) {
+                velocity.x = controller.moveAxis * controller.walkSpeed;
+            }
+        );
+    });
+
+    world.get<Tenshi::CharacterController>(player).moveAxis = -1.0;
+    world.update(1.0f / 60.0f);
+
+    check(world.view<Tenshi::Transform, Tenshi::Velocity,
+        Tenshi::PlayerControlled>().contains(player),
+        "gameplay entity composition failed"
+    );
+    check(world.get<Tenshi::Velocity>(player).x == -120.0,
+        "gameplay controller system failed"
+    );
+}
+
 } // namespace
 
 // TODO: check MEAs too (OP and creation en masse)
@@ -276,6 +308,7 @@ int main() {
     testEntitiesAndComponents();
     testSystems();
     testWorldMove();
+    testGameplayComposition();
     
     // testMEA(500000000);
 }

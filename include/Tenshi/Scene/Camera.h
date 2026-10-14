@@ -1,11 +1,8 @@
 #pragma once
 
-#include <vector>
-#include <memory>
+#include "Tenshi/Entity/Entity.h"
 
 namespace Tenshi {
-
-class Actor;
 
 struct CameraEffect {
     float time;
@@ -38,15 +35,11 @@ public:
     double lerpSpeed = 0.12;
 
     void update(double dt);
+    void update(double dt, double targetX, double targetY, double velocityX, double velocityY);
 
     int getViewX() const;
     int getViewY() const;
 
-    void SetFollowedActor(Actor* followedActor);
-    Actor* GetFollowedActor();
-    
-private:
-    Actor* followedActor;
 };
 
 } // namespace Tenshi

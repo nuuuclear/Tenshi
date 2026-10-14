@@ -156,6 +156,7 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Camera.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/CharacterModel.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Collider.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Components.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Player.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Scene.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Utility/Colour.h"
