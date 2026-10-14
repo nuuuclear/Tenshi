@@ -29,9 +29,15 @@ set(TENSHI_RESOURCE_DIR
 )
 
 set(TENSHI_PAK_FILE
-    "${CMAKE_BINARY_DIR}/packed/resource0.tpk"
+    "${CMAKE_BINARY_DIR}/game_data/resource0.tpk"
     CACHE FILEPATH
-    "Output resource archive"
+    "First output resource archive chunk"
+)
+
+set(TENSHI_PAK_MAX_SIZE
+    "67108864"
+    CACHE STRING
+    "Maximum TPK chunk size in bytes"
 )
 
 # --------------------------------------------------------
@@ -98,6 +104,12 @@ target_include_directories(stb_truetype INTERFACE
 
 set(TENSHI_INCLUDE_DIR "include")
 set(TENSHI_SOURCE_DIR  "src")
+set(TENSHI_COPY_PAK_CHUNKS_SCRIPT
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyPakChunks.cmake"
+    CACHE INTERNAL
+    "Path to the generated PAK chunk staging script"
+    FORCE
+)
 
 add_library(tenshi STATIC)
 add_library(tenshi::tenshi ALIAS tenshi)
@@ -229,6 +241,10 @@ endif()
 # ============================================================
 
 if(TENSHI_PACKED)
+    file(GLOB_RECURSE TENSHI_RESOURCE_FILES CONFIGURE_DEPENDS
+        "${TENSHI_RESOURCE_DIR}/*"
+    )
+
     # --------------------------------------------------------
     # Native build
     # --------------------------------------------------------
@@ -249,13 +265,15 @@ if(TENSHI_PACKED)
                 "${CMAKE_COMMAND}"
                 -E
                 make_directory
-                "${CMAKE_BINARY_DIR}/packed"
+                "${CMAKE_BINARY_DIR}/game_data"
             COMMAND
                 "$<TARGET_FILE:packer_tool>"
                 "${TENSHI_RESOURCE_DIR}"
                 "${TENSHI_PAK_FILE}"
+                "${TENSHI_PAK_MAX_SIZE}"
             DEPENDS
                 packer_tool
+                ${TENSHI_RESOURCE_FILES}
             COMMENT
                 "Packing game resources"
             VERBATIM
@@ -319,13 +337,15 @@ if(TENSHI_PACKED)
                 "${CMAKE_COMMAND}"
                 -E
                 make_directory
-                "${CMAKE_BINARY_DIR}/packed"
+                "${CMAKE_BINARY_DIR}/game_data"
             COMMAND
                 "${TENSHI_PACKER}"
                 "${TENSHI_RESOURCE_DIR}"
                 "${TENSHI_PAK_FILE}"
+                "${TENSHI_PAK_MAX_SIZE}"
             DEPENDS
                 tenshi_packer
+                ${TENSHI_RESOURCE_FILES}
             COMMENT
                 "Packing game resources"
             VERBATIM
@@ -361,25 +381,25 @@ function(tenshi_setup_game TARGET)
         add_dependencies(${TARGET} pack_resources)
 
         if(NOT EMSCRIPTEN)
-            # copy generated archive next to the game executable
+            # copy generated chunks next to the game executable
             add_custom_command(
                 TARGET 
                     ${TARGET}
                     POST_BUILD
                 COMMAND
                     "${CMAKE_COMMAND}"
-                    -E
-                    copy_if_different
-                    "${TENSHI_PAK_FILE}"
-                    "$<TARGET_FILE_DIR:${TARGET}>/resource0.tpk"
+                    "-DSOURCE_DIR=${CMAKE_BINARY_DIR}/game_data"
+                    "-DDESTINATION_DIR=$<TARGET_FILE_DIR:${TARGET}>"
+                    -P
+                    "${TENSHI_COPY_PAK_CHUNKS_SCRIPT}"
                 VERBATIM
             )
         else()
-            # put archive into the Emscripten virtual filesystem
+            # put the packed directory (all chunks) into the virtual filesystem
             target_link_options(${TARGET}
                 PRIVATE
                     "--preload-file"
-                    "${TENSHI_PAK_FILE}@/resource0.tpk"
+                    "${CMAKE_BINARY_DIR}/game_data@/"
             )
         endif()
     else()

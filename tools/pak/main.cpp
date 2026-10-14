@@ -7,6 +7,7 @@
 #include <vector>
 #include <limits>
 #include <cctype>
+#include <charconv>
 
 #include <lz4.h>
 
@@ -147,11 +148,137 @@ bool compressFile(FileData& file) {
     return true;
 }
 
+uint64_t storedSize(const FileData& file) {
+    return file.compression == Compression::LZ4
+        ? static_cast<uint64_t>(file.compressed.size())
+        : static_cast<uint64_t>(file.data.size());
+}
+
+uint64_t entryTableSize(const FileData& file) {
+    return static_cast<uint64_t>(sizeof(PakEntryHeader))
+        + static_cast<uint64_t>(file.path.size());
+}
+
+fs::path chunkPath(const fs::path& firstChunk, uint64_t index) {
+    std::string stem = firstChunk.stem().string();
+    while (!stem.empty()
+        && std::isdigit(static_cast<unsigned char>(stem.back()))
+    ) {
+        stem.pop_back();
+    }
+
+    if (stem.empty()) {
+        stem = "resource";
+    }
+
+    return firstChunk.parent_path()
+        / (stem + std::to_string(index) + firstChunk.extension().string());
+}
+
+void removePreviousChunks(const fs::path& firstChunk) {
+    const fs::path directory = firstChunk.parent_path();
+    const std::string firstExtension = firstChunk.extension().string();
+
+    std::string stem = firstChunk.stem().string();
+    while (!stem.empty()
+        && std::isdigit(static_cast<unsigned char>(stem.back()))) {
+        stem.pop_back();
+    }
+
+    if (stem.empty() || !fs::exists(directory)) {
+        return;
+    }
+
+    for (const auto& entry : fs::directory_iterator(directory)) {
+        if (!entry.is_regular_file()
+        ||  entry.path().extension() != firstExtension
+        ) {
+            continue;
+        }
+
+        const std::string candidate = entry.path().stem().string();
+        if (candidate.rfind(stem, 0) != 0) {
+            continue;
+        }
+
+        const std::string suffix = candidate.substr(stem.size());
+        if (suffix.empty()
+        ||  !std::all_of(suffix.begin(), suffix.end(), [](unsigned char c) {
+                return std::isdigit(c);
+            })
+        ) {
+            continue;
+        }
+
+        std::error_code error;
+        fs::remove(entry.path(), error);
+        if (error) {
+            std::cerr << "Failed removing previous chunk: " << entry.path() << '\n';
+        }
+    }
+}
+
+bool writeChunk(const fs::path& outputFile, std::vector<FileData*>& entries) {
+    std::ofstream output(outputFile, std::ios::binary | std::ios::trunc);
+    if (!output) {
+        std::cerr << "Failed to create output: " << outputFile << '\n';
+        return false;
+    }
+
+    PakHeader header{};
+    header.magic = PAK_MAGIC;
+    header.version = PAK_VERSION;
+    header.fileCount = entries.size();
+    output.write(reinterpret_cast<const char*>(&header), sizeof(header));
+
+    for (FileData* entry : entries) {
+        entry->offset = static_cast<uint64_t>(output.tellp());
+        const std::vector<uint8_t>& data = entry->compression == Compression::LZ4
+            ? entry->compressed : entry->data;
+        if (!data.empty()) {
+            output.write(reinterpret_cast<const char*>(data.data()),
+                static_cast<std::streamsize>(data.size())
+            );
+        }
+    }
+
+    header.tableOffset = static_cast<uint64_t>(output.tellp());
+    for (const FileData* entry : entries) {
+        PakEntryHeader entryHeader{};
+        entryHeader.pathLength = static_cast<uint32_t>(entry->path.size());
+        entryHeader.offset = entry->offset;
+        entryHeader.compressedSize = storedSize(*entry);
+        entryHeader.uncompressedSize = entry->data.size();
+        entryHeader.compression = static_cast<uint32_t>(entry->compression);
+        entryHeader.checksum = entry->checksum;
+
+        output.write(
+            reinterpret_cast<const char*>(&entryHeader),
+            sizeof(entryHeader)
+        );
+        output.write(
+            entry->path.data(),
+            static_cast<std::streamsize>(entry->path.size())
+        );
+    }
+
+    output.seekp(0, std::ios::beg);
+    output.write(reinterpret_cast<const char*>(&header), sizeof(header));
+    output.close();
+
+    if (!output) {
+        std::cerr << "Failed finalizing archive: " << outputFile << '\n';
+        return false;
+    }
+
+    return true;
+}
+
 int main(int argc, char** argv) {
-    if (argc != 3) {
+    if (argc != 3 && argc != 4) {
         std::cout
             << "Usage:\n"
-            << "  tenshi_packer <input directory> <output pak>\n";
+            << "  tenshi_packer <input directory> <first output pak> [maximum chunk size in bytes]\n";
 
         return 1;
     }
@@ -160,9 +287,9 @@ int main(int argc, char** argv) {
     
     // fix filepath bug when building with emscripten on windows
 #ifdef _WIN32
-    if (inputString.size() >= 3 
-    &&  inputString[0] == '/' 
-    &&  std::isalpha(static_cast<unsigned char>(inputString[1])) 
+    if (inputString.size() >= 3
+    &&  inputString[0] == '/'
+    &&  std::isalpha(static_cast<unsigned char>(inputString[1]))
     &&  inputString[2] == ':') {
         inputString.erase(0, 1);
     }
@@ -170,9 +297,23 @@ int main(int argc, char** argv) {
 
     std::filesystem::path inputDirectory(inputString);
     fs::path outputFile = fs::absolute(argv[2]).lexically_normal();
+    uint64_t maximumChunkSize = std::numeric_limits<uint64_t>::max();
 
-    if (!fs::exists(inputDirectory) ||
-        !fs::is_directory(inputDirectory)) {
+    if (argc == 4) {
+        const std::string value = argv[3];
+        const auto [end, error] = std::from_chars(value.data(), value.data() + value.size(), maximumChunkSize);
+        if (error != std::errc() 
+        ||  end != value.data() + value.size()
+        ||  maximumChunkSize == 0
+        ) {
+            std::cerr << "Maximum chunk size must be a positive integer\n";
+            return 1;
+        }
+    }
+
+    if (!fs::exists(inputDirectory)
+    ||  !fs::is_directory(inputDirectory)
+    ) {
         std::cerr
             << "Input directory does not exist: "
             << inputDirectory
@@ -183,9 +324,7 @@ int main(int argc, char** argv) {
 
     std::vector<fs::path> files;
 
-    for (const auto& entry :
-        fs::recursive_directory_iterator(inputDirectory)) {
-
+    for (const auto& entry : fs::recursive_directory_iterator(inputDirectory)) {
         if (!entry.is_regular_file()) {
             continue;
         }
@@ -199,11 +338,7 @@ int main(int argc, char** argv) {
 
     for (const auto& path : files) {
         FileData file;
-
-        file.path = makeVirtualPath(
-            inputDirectory,
-            path
-        );
+        file.path = makeVirtualPath(inputDirectory, path);
 
         std::cout
             << "Packing "
@@ -233,112 +368,33 @@ int main(int argc, char** argv) {
         entries.push_back(std::move(file));
     }
 
-    std::ofstream output(outputFile, std::ios::binary | std::ios::trunc);
+    removePreviousChunks(outputFile);
 
-    if (!output) {
-        std::cerr
-            << "Failed to create output: "
-            << outputFile
-            << '\n';
-
-        return 1;
-    }
-
-    PakHeader header{};
-
-    header.magic = PAK_MAGIC;
-    header.version = PAK_VERSION;
-    header.fileCount = entries.size();
-    header.tableOffset = 0;
-
-    output.write(reinterpret_cast<const char*>(&header), sizeof(header));
-    if (!output) {
-        std::cerr << "Failed writing PAK header\n";
-
-        return 1;
-    }
+    std::vector<FileData*> chunk;
+    uint64_t chunkSize = sizeof(PakHeader);
+    uint64_t chunkIndex = 0;
+    uint64_t archiveSize = 0;
 
     for (auto& entry : entries) {
-        entry.offset = static_cast<uint64_t>(output.tellp());
-
-        const std::vector<uint8_t>& data 
-        =   entry.compression == Compression::LZ4
-            ?   entry.compressed
-            :   entry.data;
-
-        if (!data.empty()) {
-            output.write(
-                reinterpret_cast<const char*>(data.data()),
-                static_cast<std::streamsize>(data.size())
-            );
+        const uint64_t entrySize = storedSize(entry) + entryTableSize(entry);
+        if (!chunk.empty() && chunkSize + entrySize > maximumChunkSize) {
+            const fs::path path = chunkPath(outputFile, chunkIndex++);
+            if (!writeChunk(path, chunk)) return 1;
+            archiveSize += fs::file_size(path);
+            chunk.clear();
+            chunkSize = sizeof(PakHeader);
         }
 
-        if (!output) {
-            std::cerr
-                << "Failed writing data: "
-                << entry.path
-                << '\n';
-
-            return 1;
-        }
+        chunk.push_back(&entry);
+        chunkSize += entrySize;
     }
 
-    uint64_t tableOffset = static_cast<uint64_t>(output.tellp());
-
-    for (const auto& entry : entries) {
-        PakEntryHeader entryHeader{};
-
-        entryHeader.pathLength = static_cast<uint32_t>(entry.path.size());
-
-        entryHeader.offset =entry.offset;
-
-        entryHeader.compressedSize 
-        = entry.compression == Compression::LZ4
-            ?   entry.compressed.size()
-            :   entry.data.size();
-
-        entryHeader.uncompressedSize = entry.data.size();
-        entryHeader.compression = static_cast<uint32_t>(entry.compression);
-        entryHeader.checksum = entry.checksum;
-
-        output.write(
-            reinterpret_cast<const char*>(&entryHeader),
-            sizeof(entryHeader)
-        );
-
-        output.write(
-            entry.path.data(),
-            static_cast<std::streamsize>(entry.path.size())
-        );
-
-        if (!output) {
-            std::cerr
-                << "Failed writing table entry: "
-                << entry.path
-                << '\n';
-
-            return 1;
-        }
-    }
-
-    header.tableOffset = tableOffset;
-
-    output.seekp(0, std::ios::beg);
-    output.write(
-        reinterpret_cast<const char*>(&header),
-        sizeof(header)
-    );
-    output.close();
-
-    if (!output) {
-        std::cerr << "Failed finalizing archive\n";
-
-        return 1;
-    }
+    // always make resource0.tpk, even for an empty resource directory
+    const fs::path path = chunkPath(outputFile, chunkIndex++);
+    if (!writeChunk(path, chunk)) return 1;
+    archiveSize += fs::file_size(path);
 
     uint64_t originalSize = 0;
-    uint64_t archiveSize = fs::file_size(outputFile);
-
     for (const auto& entry : entries) {
         originalSize += entry.data.size();
     }
@@ -347,7 +403,9 @@ int main(int argc, char** argv) {
         << '\n'
         << "Packed "
         << entries.size()
-        << " files\n"
+        << " files into "
+        << chunkIndex
+        << " chunk(s)\n"
         << "Original size: "
         << originalSize
         << " bytes\n"
@@ -356,20 +414,20 @@ int main(int argc, char** argv) {
         << " bytes\n";
 
     if (originalSize > 0) {
-        double percentage 
-        =   100.0 
-        *   static_cast<double>(archiveSize) 
+        double percentage
+        =   100.0
+        *   static_cast<double>(archiveSize)
         /   static_cast<double>(originalSize);
 
         std::cout
-            << "archive size: "
+            << "Compression: "
             << percentage
             << "% of original\n";
     }
 
     std::cout
-        << "output: "
-        << outputFile
+        << "Output: "
+        << outputFile.parent_path()
         << '\n';
 
     return 0;

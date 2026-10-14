@@ -8,6 +8,7 @@
 
 #include <utility>
 #include <string>
+#include <cstdint>
 #include <filesystem>
 
 #ifdef __EMSCRIPTEN__
@@ -83,8 +84,19 @@ bool Game::init() {
     std::filesystem::path root(basePath);
     filesys.setRoot(root.string());
 
-    // needs fixing, but this'll do for now...
-    if (!filesys.mountPak("", "resource0.tpk")) {
+    bool mountedPak = false;
+    for (uint64_t chunk = 0;; ++chunk) {
+        const std::string pakName = "resource"
+            + std::to_string(chunk) + ".tpk";
+
+        if (!filesys.mountPak("", pakName)) {
+            break;
+        }
+
+        mountedPak = true;
+    }
+
+    if (!mountedPak) {
         filesys.mountDirectory("", "resources");
     }
 
