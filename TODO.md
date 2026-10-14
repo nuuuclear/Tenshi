@@ -8,7 +8,6 @@ A list of things that need doing, they don't necessarily need to be done in orde
 
 #### Finish:
 - Tilemap collision
-- implementing ECS, and convert existing features to use it.
 - implementing YAML for existing features
 
 #### Future:
