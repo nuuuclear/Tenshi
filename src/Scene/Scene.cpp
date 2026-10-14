@@ -36,9 +36,9 @@ Scene::Scene(Game* game) {
 
 				const double moveX = velocity.x * static_cast<double>(dt);
 				transform.x += moveX;
-				Rect_d box = collider.feet.getBounds(transform.x, transform.y);
+				Rect<double> box = collider.feet.getBounds(transform.x, transform.y);
 
-				for (const Rect_d& obstacle : worldColliders) {
+				for (const Rect<double>& obstacle : worldColliders) {
 					if (!Collider::intersects(box, obstacle))
 						continue;
 
@@ -53,7 +53,7 @@ Scene::Scene(Game* game) {
 				transform.y += moveY;
 				box = collider.feet.getBounds(transform.x, transform.y);
 
-				for (const Rect_d& obstacle : worldColliders) {
+				for (const Rect<double>& obstacle : worldColliders) {
 					if (!Collider::intersects(box, obstacle))
 						continue;
 					
@@ -226,7 +226,7 @@ std::unique_ptr<Tilemap>& Scene::getTilemap() {
 	return tilemap;
 }
 
-std::vector<Rect_d>& Scene::getColliders() {
+std::vector<Rect<double>>& Scene::getColliders() {
 	return worldColliders;
 }
 

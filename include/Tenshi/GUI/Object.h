@@ -16,7 +16,7 @@ namespace GUI {
 
 class Object {
 public:
-    Object(std::string id, Rect_f bounds)
+    Object(std::string id, Rect<float> bounds)
     :   id(id)
     ,   bounds(bounds)
     {}
@@ -90,7 +90,7 @@ protected:
     Object* parent = nullptr;
     std::vector<std::unique_ptr<Object>> children;
 
-    Rect_f bounds;
+    Rect<float> bounds;
     bool active = true;
 };
 

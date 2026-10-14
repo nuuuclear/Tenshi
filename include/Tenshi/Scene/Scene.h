@@ -35,7 +35,7 @@ public:
 	std::unique_ptr<Background>& getBackground();
 	std::unique_ptr<Tileset>& getTileset();
 	std::unique_ptr<Tilemap>& getTilemap();
-	std::vector<Rect_d>& getColliders();
+	std::vector<Rect<double>>& getColliders();
 	std::unique_ptr<Camera>& getCamera();
 private:
 	std::unique_ptr<SpriteBatch> batch;
@@ -43,7 +43,7 @@ private:
 	std::unique_ptr<Tileset> tileset;
 	std::unique_ptr<Tilemap> tilemap;
 	std::unique_ptr<Background> background;
-	std::vector<Rect_d> worldColliders;
+	std::vector<Rect<double>> worldColliders;
 	World world;
 
 	// TODO: make this a vector when scenes support multiple viewports

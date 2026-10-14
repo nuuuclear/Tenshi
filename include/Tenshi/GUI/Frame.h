@@ -11,7 +11,7 @@ namespace GUI {
 
 class Frame : public Object {
 public:
-    Frame(std::string id, Rect_f bounds);
+    Frame(std::string id, Rect<float> bounds);
     
     void draw(SDL_Renderer *renderer);
 };

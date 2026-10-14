@@ -3,17 +3,16 @@
 namespace Tenshi {
 namespace GUI {
 
-Frame::Frame(std::string id, Rect_f bounds)
-:   Object(
-    std::move(id), bounds
-)
-{}
+Frame::Frame(std::string id, Rect<float> bounds)
+:   Object(std::move(id), bounds)
+{
+}
 
 void Frame::draw(SDL_Renderer* renderer) {
     if (!active) return;
 
-    // draw self...
-    SDL_RenderRect(renderer, bounds);
+    SDL_FRect sdlRect = static_cast<SDL_FRect>(bounds);
+    SDL_RenderRect(renderer, &sdlRect);
 
     Object::draw(renderer);
 }
