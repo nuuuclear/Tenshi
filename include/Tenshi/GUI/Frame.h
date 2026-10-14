@@ -9,7 +9,7 @@
 namespace Tenshi {
 namespace GUI {
 
-class Frame : public Object {
+class Frame : public Element {
 public:
     Frame(std::string id, Rect<float> bounds);
     

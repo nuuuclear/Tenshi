@@ -12,7 +12,7 @@ namespace Tenshi {
 
 class Game;
 
-// acts as a root for all ui objects
+// acts as a root for all ui Elements
 class UIManager : public Subroutine {
 public:
     explicit UIManager(Game* game);
@@ -22,9 +22,9 @@ public:
     void update(double deltaTime);
     void draw();
 
-    void pushChild(std::unique_ptr<GUI::Object> child);
+    void pushChild(std::unique_ptr<GUI::Element> child);
 private:
-    std::vector<std::unique_ptr<GUI::Object>> children;
+    std::vector<std::unique_ptr<GUI::Element>> children;
 };
 
 

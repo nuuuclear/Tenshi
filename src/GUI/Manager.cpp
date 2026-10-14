@@ -29,7 +29,7 @@ void UIManager::draw() {
     }
 }
 
-void UIManager::pushChild(std::unique_ptr<GUI::Object> child) {
+void UIManager::pushChild(std::unique_ptr<GUI::Element> child) {
     children.push_back(std::move(child));
 }
 

@@ -14,14 +14,14 @@
 namespace Tenshi {
 namespace GUI {
 
-class Object {
+class Element {
 public:
-    Object(std::string id, Rect<float> bounds)
+    Element(std::string id, Rect<float> bounds)
     :   id(id)
     ,   bounds(bounds)
     {}
 
-    virtual ~Object() = default;
+    virtual ~Element() = default;
 
     virtual bool event(const Event& event) {
         if (!active) return false;
@@ -53,7 +53,7 @@ public:
         }
     }
 
-    void addChild(std::unique_ptr<Object> child) {
+    void addChild(std::unique_ptr<Element> child) {
         if (!child) return;
         child->parent = this;
         children.push_back(std::move(child));
@@ -61,7 +61,7 @@ public:
 
     bool removeChild(const std::string& id) {
         auto it = std::remove_if(children.begin(), children.end(),
-            [&id](const std::unique_ptr<Object>& child) {
+            [&id](const std::unique_ptr<Element>& child) {
                 return child->id == id;
             });
         
@@ -87,8 +87,8 @@ public:
 
 protected:
     std::string id;
-    Object* parent = nullptr;
-    std::vector<std::unique_ptr<Object>> children;
+    Element* parent = nullptr;
+    std::vector<std::unique_ptr<Element>> children;
 
     Rect<float> bounds;
     bool active = true;
