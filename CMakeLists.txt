@@ -144,7 +144,7 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Graphics/TileTypes.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Frame.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Manager.h"
-        "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Object.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/GUI/Element.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Input/Input.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Input/InputEvent.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Input/Key.h"

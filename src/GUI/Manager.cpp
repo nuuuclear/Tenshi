@@ -1,6 +1,6 @@
 #include "Tenshi/GUI/Manager.h"
 
-#include "Tenshi/GUI/Object.h"
+#include "Tenshi/GUI/Element.h"
 #include "Tenshi/Core/Game.h"
 
 namespace Tenshi {

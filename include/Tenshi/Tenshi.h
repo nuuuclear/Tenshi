@@ -22,7 +22,7 @@
 #include "Tenshi/Graphics/Tileset.h"
 #include "Tenshi/GUI/Frame.h"
 #include "Tenshi/GUI/Manager.h"
-#include "Tenshi/GUI/Object.h"
+#include "Tenshi/GUI/Element.h"
 #include "Tenshi/Input/Input.h"
 #include "Tenshi/Input/InputEvent.h"
 #include "Tenshi/Input/Key.h"

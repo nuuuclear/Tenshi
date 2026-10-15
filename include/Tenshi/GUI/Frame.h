@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Tenshi/Utility/Types.h"
-#include "Tenshi/GUI/Object.h"
+#include "Tenshi/GUI/Element.h"
 
 #include <SDL3/SDL.h>
 
