@@ -157,7 +157,6 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/CharacterModel.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Collider.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Components.h"
-        "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Player.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Scene.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Utility/Colour.h"
 
@@ -200,7 +199,6 @@ target_sources(tenshi
         "${TENSHI_SOURCE_DIR}/Scene/Background.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/Camera.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/CharacterModel.cpp"
-        "${TENSHI_SOURCE_DIR}/Scene/Player.cpp"
         "${TENSHI_SOURCE_DIR}/Scene/Scene.cpp"
 )
 

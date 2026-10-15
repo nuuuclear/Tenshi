@@ -35,5 +35,4 @@
 #include "Tenshi/Scene/CharacterModel.h"
 #include "Tenshi/Scene/Collider.h"
 #include "Tenshi/Scene/Components.h"
-#include "Tenshi/Scene/Player.h"
 #include "Tenshi/Scene/Scene.h"
