@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Tenshi/Geometry/Vector.h"
-#include "Tenshi/Geometry/Rect.h"
+#include "Tenshi/Utility/Types.h"
 #include "Tenshi/GUI/Object.h"
 
 #include <SDL3/SDL.h>

@@ -14,8 +14,6 @@
 #include "Tenshi/Entity/World.h"
 #include "Tenshi/Files/FileSystem.h"
 #include "Tenshi/Files/Yaml.h"
-#include "Tenshi/Geometry/Rect.h"
-#include "Tenshi/Geometry/Vector.h"
 #include "Tenshi/Graphics/Sprite.h"
 #include "Tenshi/Graphics/SpriteBatch.h"
 #include "Tenshi/Graphics/Text.h"
@@ -36,3 +34,4 @@
 #include "Tenshi/Scene/Collider.h"
 #include "Tenshi/Scene/Components.h"
 #include "Tenshi/Scene/Scene.h"
+#include "Tenshi/Utility/Types.h"

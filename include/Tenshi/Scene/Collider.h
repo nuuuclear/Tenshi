@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Tenshi/Geometry/Rect.h"
+#include "Tenshi/Utility/Types.h"
 
 namespace Tenshi {
 

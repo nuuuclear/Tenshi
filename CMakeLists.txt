@@ -135,8 +135,6 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Entity/World.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Files/FileSystem.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Files/Yaml.h"
-        "${TENSHI_INCLUDE_DIR}/Tenshi/Geometry/Rect.h"
-        "${TENSHI_INCLUDE_DIR}/Tenshi/Geometry/Vector.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Graphics/Sprite.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Graphics/SpriteBatch.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Graphics/Text.h"
@@ -158,7 +156,7 @@ target_sources(tenshi
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Collider.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Components.h"
         "${TENSHI_INCLUDE_DIR}/Tenshi/Scene/Scene.h"
-        "${TENSHI_INCLUDE_DIR}/Tenshi/Utility/Colour.h"
+        "${TENSHI_INCLUDE_DIR}/Tenshi/Utility/Types.h"
 
         # Private
         "${TENSHI_SOURCE_DIR}/Assets/AssetLoading.cpp"

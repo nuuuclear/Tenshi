@@ -20,7 +20,7 @@
 #include "Tenshi/Core/Subroutine.h"
 #include "Tenshi/Audio/Audio.h"
 
-#include "Tenshi/Utility/Colour.h"
+#include "Tenshi/Utility/Types.h"
 
 namespace Tenshi {
 
